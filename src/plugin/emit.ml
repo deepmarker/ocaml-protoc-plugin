@@ -17,7 +17,7 @@ type module' = {
 let emit_enum_type ~scope ~params
     EnumDescriptorProto.{name; value = values; options = _; reserved_range = _; reserved_name = _}
     : module' =
-  let name = Option.value_exn ~message:"Enums must have a name" name in
+  let name = Option.value ~default:"Enums must have a name" name in
   let module_name = Scope.get_name scope name in
   let signature = Code.init () in
   let implementation = Code.init () in
@@ -35,14 +35,14 @@ let emit_enum_type ~scope ~params
 
   Code.emit implementation `Begin "let to_int = function";
   List.iter ~f:(fun EnumValueDescriptorProto.{name; number; _} ->
-    Code.emit implementation `None "| %s -> %d" (Scope.get_name_exn scope name) (Option.value_exn number)
+    Code.emit implementation `None "| %s -> %d" (Scope.get_name_exn scope name) (Option.get number)
   ) values;
   Code.emit implementation `End "";
 
   Code.emit implementation `Begin "let from_int = function";
   let _ =
     List.fold_left ~init:IntSet.empty ~f:(fun seen EnumValueDescriptorProto.{name; number; _} ->
-        let idx = (Option.value_exn ~message:"All enum descriptions must have a value" number) in
+        let idx = (Option.get number) in
         match IntSet.mem idx seen with
         | true -> seen
         | false ->
@@ -56,7 +56,7 @@ let emit_enum_type ~scope ~params
 
 let emit_service_type scope ServiceDescriptorProto.{ name; method' = methods; _ } =
   let emit_method t local_scope scope service_name MethodDescriptorProto.{ name; input_type; output_type; _} =
-    let name = Option.value_exn name in
+    let name = Option.get name in
     let uncapitalized_name = String.uncapitalize_ascii name |> Scope.Local.get_unique_name local_scope in
     (* To keep symmetry, only ensure that lowercased names are unique
        so that the upper case names are aswell.  We should remove this
@@ -74,7 +74,7 @@ let emit_service_type scope ServiceDescriptorProto.{ name; method' = methods; _ 
     let output = Scope.get_scoped_name scope output_type in
     let output_t = Scope.get_scoped_name scope ~postfix:"t" output_type in
     Code.emit t `Begin "module %s = struct" capitalized_name;
-    Code.emit t `None "let package_name = %s" (Option.value_map ~default:"None" ~f:(fun n -> sprintf "Some \"%s\"" n) package_name_opt);
+    Code.emit t `None "let package_name = %s" (Option.fold ~none:"None" ~some:(fun n -> sprintf "Some \"%s\"" n) package_name_opt);
     Code.emit t `None "let service_name = \"%s\"" service_name;
     Code.emit t `None "let method_name = \"%s\"" name;
     Code.emit t `None "let name = \"/%s%s/%s\"" package_name service_name name;
@@ -91,7 +91,7 @@ let emit_service_type scope ServiceDescriptorProto.{ name; method' = methods; _ 
     Code.emit t `End "";
     ()
   in
-  let name = Option.value_exn ~message:"Service definitions must have a name" name in
+  let name = Option.value ~default:"Service definitions must have a name" name in
   let t = Code.init () in
   Code.emit t `Begin "module %s = struct" (Scope.get_name scope name);
   let local_scope = Scope.Local.init () in
@@ -102,7 +102,7 @@ let emit_service_type scope ServiceDescriptorProto.{ name; method' = methods; _ 
 
 let emit_extension ~scope ~params field =
   let FieldDescriptorProto.{ name; extendee; _ } = field in
-  let name = Option.value_exn ~message:"Extensions must have a name" name in
+  let name = Option.value ~default:"Extensions must have a name" name in
   let module_name = (Scope.get_name scope name) in
   let extendee_type = Scope.get_scoped_name scope ~postfix:"t" extendee in
   let extendee_field = Scope.get_scoped_name scope ~postfix:"extensions'" extendee in
@@ -256,7 +256,7 @@ let parse_proto_file ~params scope
                           enum_type = enum_types; service = services; extension;
                           options = _; source_code_info = _; syntax; }
   =
-  let name = Option.value_exn ~message:"All files must have a name" name |> String.map ~f:(function '-' -> '_' | c -> c) in
+  let name = Option.value ~default:"All files must have a name" name |> String.map ~f:(function '-' -> '_' | c -> c) in
   let syntax = match syntax with
     | None | Some "proto2" -> `Proto2
     | Some "proto3" -> `Proto3
@@ -302,7 +302,7 @@ let parse_proto_file ~params scope
       Code.emit implementation `End "end";
       Code.emit implementation `None "(**/**)";
   in
-  wrap_packages ~params ~syntax scope message_type services (Option.value_map ~default:[] ~f:(String.split_on_char ~sep:'.') package)
+  wrap_packages ~params ~syntax scope message_type services (Option.fold ~none:[] ~some:(String.split_on_char ~sep:'.') package)
   |> Code.append implementation;
 
 

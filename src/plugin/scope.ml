@@ -50,25 +50,25 @@ module Type_tree = struct
   type file = { module_name: string; types: t list }
 
   let map_enum EnumDescriptorProto.{ name; value = values; _ } =
-    let name = Option.value_exn ~message:"All enums must have a name" name in
+    let name = Option.value ~default:"All enums must have a name" name in
     let enum_names =
       List.map ~f:(fun EnumValueDescriptorProto.{ name; _ } ->
-        Option.value_exn ~message:"All enum values must have a name" name
+        Option.value ~default:"All enum values must have a name" name
       ) values
     in
     { name; types = []; depends = []; fields = [], []; enum_names; service_names = [] }
 
   let map_service ServiceDescriptorProto.{ name; method' = methods; _ } =
-    let name = Option.value_exn ~message:"All enums must have a name" name in
+    let name = Option.value ~default:"All enums must have a name" name in
     let service_names =
       List.map ~f:(fun MethodDescriptorProto.{ name; _ } ->
-        Option.value_exn ~message:"All service methods must have a name" name
+        Option.value ~default:"All service methods must have a name" name
       ) methods
     in
     { name; types = []; depends = []; fields = [], []; enum_names = []; service_names}
 
   let map_extension FieldDescriptorProto.{ name; _ } =
-    let name = Option.value_exn ~message:"All enums must have a name" name in
+    let name = Option.value ~default:"All enums must have a name" name in
     { name; types = []; depends = []; fields = [], []; enum_names = []; service_names = []}
 
   let split_oneof_fields fields =
@@ -88,7 +88,7 @@ module Type_tree = struct
 
 
   let rec map_message DescriptorProto.{ name; field = fields; nested_type = nested_types; enum_type = enums; oneof_decl = oneof_decls; extension = extensions; _} : t =
-    let name = Option.value_exn ~message:"All messages must have a name" name in
+    let name = Option.value ~default:"All messages must have a name" name in
     let depends =
       List.fold_left ~init:[] ~f:(fun acc -> function
           | FieldDescriptorProto.{ type_name = Some type_name; type' = Some Type.TYPE_MESSAGE; _ } ->
@@ -104,7 +104,7 @@ module Type_tree = struct
     let types = List.sort ~cmp:compare (enums @ extensions @ nested_types) in
     let fields =
       let field_name FieldDescriptorProto.{ name; _} =
-        Option.value_exn ~message:"Field names cannot be null" name
+        Option.value ~default:"Field names cannot be null" name
       in
       let (plain_fields, oneof_fields) = List.partition ~f:(function FieldDescriptorProto.{ proto3_optional = Some true; _ } -> true
                                                                    | { oneof_index = None; _ } -> true
@@ -112,7 +112,7 @@ module Type_tree = struct
       let plain_fields =
         let acc = List.map ~f:field_name plain_fields in
         List.fold_left ~init:acc ~f:(fun acc OneofDescriptorProto.{ name; _ } ->
-          (Option.value_exn ~message:"Oneof names cannot be null" name) :: acc
+          (Option.value ~default:"Oneof names cannot be null" name) :: acc
         ) oneof_decls
       in
       let oneof_fields =
@@ -129,8 +129,8 @@ module Type_tree = struct
     let services = List.map ~f:map_service services in
     let extensions = List.map ~f:map_extension extensions in
     let types = enums @ messages @ services @ extensions in
-    let module_name = Option.value_exn ~message:"File descriptor must have a name" name in
-    let packages = Option.value_map ~default:[] ~f:(String.split_on_char ~sep:'.') package in
+    let module_name = Option.value ~default:"File descriptor must have a name" name in
+    let packages = Option.fold ~none:[] ~some:(String.split_on_char ~sep:'.') package in
     let types = List.fold_right ~init:types ~f:(fun name types -> [ { name; types; depends = []; fields = [], []; enum_names = []; service_names = [] } ]) packages in
     { module_name; types }
 
@@ -276,7 +276,7 @@ module Type_tree = struct
     traverse_types map "" types
 
   let option_mangle_names FileDescriptorProto.{ options; _ } =
-    Option.map ~f:Spec.Options.Ocaml_options.get options
+    Option.map Spec.Options.Ocaml_options.get options
     |> function
     | Some (Ok (Some v)) -> v
     | Some (Ok None) -> false
@@ -318,9 +318,9 @@ let init files =
   { module_name = ""; proto_path = ""; package_depth = 0; type_db; }
 
 let for_descriptor t FileDescriptorProto.{ name; package; _ } =
-  let name = Option.value_exn ~message:"All file descriptors must have a name" name in
+  let name = Option.value ~default:"All file descriptors must have a name" name in
   let module_name = module_name_of_proto name in
-  let package_depth = Option.value_map ~default:0 ~f:(fun p -> String.split_on_char ~sep:'.' p |> List.length) package in
+  let package_depth = Option.fold ~none:0 ~some:(fun p -> String.split_on_char ~sep:'.' p |> List.length) package in
   { t with package_depth; module_name; proto_path = "" }
 
 let push: t -> string -> t = fun t name -> { t with proto_path = t.proto_path ^ "." ^ name }
@@ -331,7 +331,7 @@ let rec drop n = function
   | xs -> xs
 
 let get_scoped_name ?postfix t name =
-  let name = Option.value_exn ~message:"Does not contain a name" name in
+  let name = Option.value ~default:"Does not contain a name" name in
 
   let { ocaml_name; module_name; _ } = StringMap.find name t.type_db in
   let type_name = match String.equal module_name t.module_name with
@@ -343,7 +343,7 @@ let get_scoped_name ?postfix t name =
     | false -> Printf.sprintf "%s.%s.%s" import_module_name module_name ocaml_name
   in
   (* Strip away the package depth *)
-  Option.value_map ~default:type_name ~f:(fun postfix -> type_name ^ "." ^ postfix) postfix
+  Option.fold ~none:type_name ~some:(fun postfix -> type_name ^ "." ^ postfix) postfix
 
 let get_name t name =
   let path = t.proto_path ^ "." ^ name in
@@ -352,7 +352,7 @@ let get_name t name =
     | None -> failwith (Printf.sprintf "Cannot find %s in %s." name t.proto_path)
 
 let get_name_exn t name =
-  let name = Option.value_exn ~message:"Does not contain a name" name in
+  let name = Option.value ~default:"Does not contain a name" name in
   get_name t name
 
 let get_current_scope t =

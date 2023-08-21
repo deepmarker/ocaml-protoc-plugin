@@ -111,7 +111,7 @@ let string_of_default: type a. a spec -> a -> string = function
   | Bool -> string_of_bool
   | String -> sprintf "{|%s|}"
   | Bytes -> fun bytes -> sprintf "(Bytes.of_string {|%s|})" (Bytes.to_string bytes)
-  | Enum (_, _, _,  s) -> fun _ -> Option.value_exn s
+  | Enum (_, _, _,  s) -> fun _ -> Option.get s
   | Message _ -> failwith "Messages defaults are not relevant"
 
 let default_of_spec: type a. a spec -> string = fun spec -> match spec with
@@ -229,7 +229,7 @@ let spec_of_enum ~scope type_name default =
   let type' = Scope.get_scoped_name ~postfix:"t" scope type_name in
   let deserialize_func = Scope.get_scoped_name ~postfix:"from_int" scope type_name in
   let serialize_func = Scope.get_scoped_name ~postfix:"to_int" scope type_name in
-  let default = Option.map ~f:(fun default -> Scope.get_scoped_name ~postfix:default scope type_name) default in
+  let default = Option.map (fun default -> Scope.get_scoped_name ~postfix:default scope type_name) default in
   Enum (type', deserialize_func, serialize_func, default)
 
 open Parameters
@@ -320,8 +320,8 @@ let c_of_compound: type a. string -> a compound -> c = fun name compound ->
 let c_of_field ~params ~syntax ~scope field =
   let open FieldDescriptorProto in
   let open FieldDescriptorProto.Type in
-  let number = Option.value_exn field.number in
-  let name = Option.value_exn field.name in
+  let number = Option.get field.number in
+  let name = Option.get field.name in
   match syntax, field with
   (* This function cannot handle oneof types *)
   | _, { oneof_index = Some _; proto3_optional = Some false | None; _ } -> failwith "Cannot handle oneofs"
@@ -475,7 +475,7 @@ let c_of_oneof ~params ~syntax:_ ~scope OneofDescriptorProto.{ name; _ } fields 
     Oneof (type', deser_oneofs, ser_oneof, None)
   in
 
-  c_of_compound (Option.value_exn name) oneof
+  c_of_compound (Option.get name) oneof
 
 
 (** Return a list of plain fields + a list of fields per oneof_decl *)
@@ -540,7 +540,7 @@ let make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields
       | { name; type' = { modifier = List; _ }; _} -> Some ((Scope.get_name scope name), "[]")
       | { name; type' = { modifier = No_modifier default; _}; _} -> Some ((Scope.get_name scope name), default)
     in
-    Option.map ~f:(fun (name, default) ->
+    Option.map (fun (name, default) ->
       sprintf "let %s = match %s with Some v -> v | None -> %s in" name name default
     ) dv
   in

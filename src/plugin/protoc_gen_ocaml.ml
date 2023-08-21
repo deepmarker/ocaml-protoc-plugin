@@ -22,7 +22,7 @@ let parse_request Plugin.CodeGeneratorRequest.{file_to_generate = files_to_gener
   let params = Parameters.parse (Option.value ~default:"" parameters) in
   (* Find the correct file to process *)
   let target_proto_files = List.filter ~f:(fun Descriptor.FileDescriptorProto.{name; _} ->
-      List.mem ~set:files_to_generate (Option.value_exn name)
+      List.mem ~set:files_to_generate (Option.get name)
     ) proto_files
   in
   let scope = Scope.init proto_files in
