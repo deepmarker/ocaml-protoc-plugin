@@ -2,22 +2,9 @@ open StdLabels
 module Descriptor = Spec.Descriptor.Google.Protobuf
 module Plugin = Spec.Plugin.Google.Protobuf.Compiler
 
-let read_all in_channel =
-  let rec inner buffer =
-    let b = Bytes.create 1024 in
-    match input in_channel b 0 1024 with
-    | 1024 ->
-      Buffer.add_bytes buffer b;
-      inner buffer
-    | read ->
-      Buffer.add_subbytes buffer b 0 read;
-      Buffer.contents buffer
-  in
-  inner (Buffer.create 1024)
-
 (* Read from stdin *)
 let read () =
-  read_all stdin
+  In_channel.input_all stdin
   |> Ocaml_protoc_plugin.Reader.create
   |> Plugin.CodeGeneratorRequest.from_proto
   |> function
