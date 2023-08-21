@@ -10,9 +10,11 @@ type t = {
   default_constructor_impl: string;
 }
 
+type syntax = [`Proto2 | `Proto3]
+
 val make:
   params:Parameters.t ->
-  syntax:[< `Proto2 | `Proto3 ] ->
+  syntax:[< syntax ] ->
   is_cyclic: bool ->
   is_map_entry: bool ->
   has_extensions: bool ->

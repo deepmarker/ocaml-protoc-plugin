@@ -1,5 +1,7 @@
 GOOGLE_INCLUDE=$(shell pkg-config protobuf --variable=includedir)/google/protobuf
 
+all: test
+
 .PHONY: build
 build: ## Build
 	@dune build @install

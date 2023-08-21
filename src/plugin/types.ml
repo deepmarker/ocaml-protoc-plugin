@@ -317,16 +317,45 @@ let c_of_compound: type a. string -> a compound -> c = fun name compound ->
     let type' = { name = type'; modifier = No_modifier {|`not_set|} } in
     { name; type'; deserialize_spec; serialize_spec }
 
+type syntax = [`Proto2 | `Proto3]
+
+let type_name_of_basic_type (t:FieldDescriptorProto.Type.t) = match t with
+  | TYPE_DOUBLE -> "double"
+  | TYPE_FLOAT -> "float"
+  | TYPE_INT64 -> "int64"
+  | TYPE_UINT64 -> "uint64"
+  | TYPE_INT32 -> "sint32"
+  | TYPE_FIXED64 -> "fixed64"
+  | TYPE_FIXED32 -> "fixed32"
+  | TYPE_BOOL -> "bool"
+  | TYPE_STRING -> "string"
+  | TYPE_BYTES -> "bytes"
+  | TYPE_UINT32 -> "uint32"
+  | TYPE_SFIXED32 -> "sfixed32"
+  | TYPE_SFIXED64 -> "sfixed64"
+  | TYPE_SINT32 -> "sint32"
+  | TYPE_SINT64 -> "sint64"
+  | TYPE_ENUM
+  | TYPE_GROUP
+  | TYPE_MESSAGE -> assert false
+
+let type_name_of_field ({type_name; type'; _ }:FieldDescriptorProto.t) =
+  match type_name with Some x -> x | None -> type_name_of_basic_type (Option.get type')
+
 let c_of_field ~params ~syntax ~scope field =
   let open FieldDescriptorProto in
   let open FieldDescriptorProto.Type in
   let number = Option.get field.number in
   let name = Option.get field.name in
+  let type_name = type_name_of_field field in
   match syntax, field with
+  (* Errors *)
+
   (* This function cannot handle oneof types *)
-  | _, { oneof_index = Some _; proto3_optional = Some false | None; _ } -> failwith "Cannot handle oneofs"
+  | #syntax, { oneof_index = Some _; proto3_optional = Some false | None; _ } ->
+    failwith "Cannot handle oneofs"
   (* Optional messages cannot have a default *)
-  | _, { type' = Some TYPE_MESSAGE; default_value = Some _; _ } ->
+  | #syntax, { type' = Some TYPE_MESSAGE; default_value = Some _; _ } ->
     failwith "Message types cannot have a default value"
   (* Proto3 cannot have defaults *)
   | `Proto3, { default_value = Some _; _ } ->
@@ -334,83 +363,87 @@ let c_of_field ~params ~syntax ~scope field =
   (* Proto3 does not support required fields *)
   | `Proto3, { label = Some Label.LABEL_REQUIRED; _ } ->
     failwith "Required fields illegal under proto3"
+  (* Repeated fields cannot have a default *)
+  | #syntax, { label = Some Label.LABEL_REPEATED; default_value = Some _; _ } ->
+    failwith "Repeated fields does not support default values"
+  | #syntax, { label = None; _ } -> failwith "Label not set on field struct"
+  | #syntax, { type' = None; _ } -> failwith "Type must be set"
+
+  (* Successes *)
 
   (* Optional message *)
-  | _, { label = Some Label.LABEL_OPTIONAL; type' = Some TYPE_MESSAGE; type_name; _ } ->
+  | #syntax, { label = Some Label.LABEL_OPTIONAL; type' = Some TYPE_MESSAGE; _ } ->
     let spec = spec_of_message ~scope type_name in
     Basic_opt (number, spec)
     |> c_of_compound name
 
   (* Required message *)
-  | `Proto2, { label = Some Label.LABEL_REQUIRED; type' = Some TYPE_MESSAGE; type_name; _ } ->
+  | `Proto2, { label = Some Label.LABEL_REQUIRED; type' = Some TYPE_MESSAGE; _ } ->
     let spec = spec_of_message ~scope type_name in
     Basic (number, spec, Required)
     |> c_of_compound name
 
   (* Enum under proto2 with a default value *)
-  | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some TYPE_ENUM; type_name; default_value = Some default; _ } ->
+  | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some TYPE_ENUM; default_value = Some default; _ } ->
     let spec = spec_of_enum ~scope type_name (Some default) in
     Basic (number, spec, Proto2 (Some default))
     |> c_of_compound name
 
   (* Enum under proto2 with no default value *)
-  | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some TYPE_ENUM; type_name; default_value = None; _ } ->
+  | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some TYPE_ENUM; default_value = None; _ } ->
     let spec = spec_of_enum ~scope type_name None in
     Basic_opt (number, spec)
     |> c_of_compound name
 
   (* Required Enum under proto2 *)
-  | `Proto2, { label = Some Label.LABEL_REQUIRED; type' = Some TYPE_ENUM; type_name; _ } ->
+  | `Proto2, { label = Some Label.LABEL_REQUIRED; type' = Some TYPE_ENUM; _ } ->
     let spec = spec_of_enum ~scope type_name None in
     Basic (number, spec, Required)
     |> c_of_compound name
 
   (* Required fields under proto2 *)
-  | `Proto2, { label = Some Label.LABEL_REQUIRED; type' = Some type'; type_name; _ } ->
+  | `Proto2, { label = Some Label.LABEL_REQUIRED; type' = Some type'; _ } ->
     let Espec spec = spec_of_type ~params ~scope type_name None type' in
     Basic (number, spec, Required)
     |> c_of_compound name
 
   (* Proto2 optional fields with a default *)
-  | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; type_name; default_value = Some default; _ } ->
+  | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; default_value = Some default; _ } ->
     let Espec spec = spec_of_type ~params ~scope type_name (Some default) type' in
     let default = make_default spec default in
     Basic (number, spec, Proto2 default)
     |> c_of_compound name
 
   (* Proto2 optional fields - no default *)
-  | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; type_name; default_value = None; _ } ->
+  | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; default_value = None; _ } ->
     let Espec spec = spec_of_type ~params ~scope type_name None type' in
     Basic_opt (number, spec)
     |> c_of_compound name
 
   (* Proto3 explicitly optional field are mapped as proto2 optional fields *)
-  | _, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; type_name; proto3_optional = Some true; _ } ->
+  | #syntax, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; proto3_optional = Some true; _ } ->
     let Espec spec = spec_of_type ~params ~scope type_name None type' in
     Basic_opt (number, spec)
     |> c_of_compound name
 
   (* Proto3 implicitly optional field *)
-  | `Proto3, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; type_name; _} ->
+  | `Proto3, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; _} ->
     let Espec spec = spec_of_type ~params ~scope type_name None type' in
     Basic (number, spec, Proto3)
     |> c_of_compound name
 
-  (* Repeated fields cannot have a default *)
-  | _, { label = Some Label.LABEL_REPEATED; default_value = Some _; _ } -> failwith "Repeated fields does not support default values"
-
   (* Repeated message *)
-  | _, { label = Some Label.LABEL_REPEATED; type' = Some Type.TYPE_MESSAGE; type_name; _ } ->
+  | #syntax, { label = Some Label.LABEL_REPEATED; type' = Some Type.TYPE_MESSAGE; _ } ->
     let spec = spec_of_message ~scope type_name in
     Repeated (number, spec, Not_packed)
     |> c_of_compound name
 
   (* Repeated enum *)
-  | _, { label = Some Label.LABEL_REPEATED; type' = Some Type.TYPE_ENUM; type_name; options; _} ->
+  | #syntax, { label = Some Label.LABEL_REPEATED; type' = Some Type.TYPE_ENUM; options; _} ->
     let spec = spec_of_enum ~scope type_name None in
     let packed = match syntax, options with
-      | _, Some FieldOptions.{ packed = Some true; _ } -> Packed
-      | _, Some FieldOptions.{ packed = Some false; _ } -> Not_packed
+      | #syntax, Some FieldOptions.{ packed = Some true; _ } -> Packed
+      | #syntax, Some FieldOptions.{ packed = Some false; _ } -> Not_packed
       | `Proto2, _ -> Not_packed
       | `Proto3, _ -> Packed
     in
@@ -418,7 +451,7 @@ let c_of_field ~params ~syntax ~scope field =
     |> c_of_compound name
 
   (* Repeated basic type *)
-  | _, { label = Some Label.LABEL_REPEATED; type' = Some type'; type_name; options; _} ->
+  | #syntax, { label = Some Label.LABEL_REPEATED; type' = Some type'; options; _} ->
     let Espec spec = spec_of_type ~params ~scope type_name None type' in
     let packed = match syntax, options with
       | _, Some FieldOptions.{ packed = Some true; _ } -> Packed
@@ -428,15 +461,15 @@ let c_of_field ~params ~syntax ~scope field =
     in
     Repeated (number, spec, packed)
     |> c_of_compound name
-  | _, { label = None; _ } -> failwith "Label not set on field struct"
-  | _, { type' = None; _ } -> failwith "Type must be set"
+
 
 let c_of_oneof ~params ~syntax:_ ~scope OneofDescriptorProto.{ name; _ } fields =
   let open FieldDescriptorProto in
   (* Construct the type. *)
   let field_infos =
     List.map ~f:(function
-        | { number = Some number; name; type' = Some type'; type_name; _ } ->
+      | { number = Some number; name; type' = Some type'; _ } as field ->
+        let type_name = type_name_of_field field in
           let Espec spec = spec_of_type ~params ~scope type_name None type' in
           (number, name, type_of_spec spec, (Espec spec))
         | _ -> failwith "No index or type"

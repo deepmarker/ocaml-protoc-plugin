@@ -69,6 +69,8 @@ let emit_service_type scope ServiceDescriptorProto.{ name; method' = methods; _ 
         | None -> ""
         | Some p -> p ^ "."
     in
+    let input_type = (Option.get input_type) in
+    let output_type =(Option.get output_type) in
     let input = Scope.get_scoped_name scope input_type in
     let input_t = Scope.get_scoped_name scope ~postfix:"t" input_type in
     let output = Scope.get_scoped_name scope output_type in
@@ -104,6 +106,7 @@ let emit_extension ~scope ~params field =
   let FieldDescriptorProto.{ name; extendee; _ } = field in
   let name = Option.value ~default:"Extensions must have a name" name in
   let module_name = (Scope.get_name scope name) in
+  let extendee = Option.get extendee in
   let extendee_type = Scope.get_scoped_name scope ~postfix:"t" extendee in
   let extendee_field = Scope.get_scoped_name scope ~postfix:"extensions'" extendee in
   (* Create the type of the type' / type_name *)
@@ -293,21 +296,12 @@ let parse_proto_file ~params scope
   let _ = match dependencies with
     | [] -> ()
     | dependencies ->
-      Code.emit implementation `None "(**/**)";
-      Code.emit implementation `Begin "module %s = struct" Scope.import_module_name;
       List.iter ~f:(fun proto_file ->
-          let module_name = Scope.module_name_of_proto proto_file in
+        (* TODO: *)
+        let module_name = Type_tree.module_name_of_proto proto_file in
           Code.emit implementation `None "module %s = %s" module_name module_name;
         ) dependencies;
-      Code.emit implementation `End "end";
-      Code.emit implementation `None "(**/**)";
   in
   wrap_packages ~params ~syntax scope message_type services (Option.fold ~none:[] ~some:(String.split_on_char ~sep:'.') package)
   |> Code.append implementation;
-
-
-  let out_name =
-    Filename.remove_extension name
-    |> sprintf "%s.ml"
-  in
-  out_name, implementation
+  Filename.remove_extension name ^ ".ml", implementation

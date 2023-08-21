@@ -37,6 +37,4 @@ let emit t indent fmt =
 
 let append t code = List.iter ~f:(emit t `None "%s") (code.code |> List.rev)
 
-let contents t =
-  List.map ~f:(Printf.sprintf "%s") (List.rev t.code)
-  |> String.concat ~sep:"\n"
+let contents t = List.rev t.code |> String.concat ~sep:"\n"
