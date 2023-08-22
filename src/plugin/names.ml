@@ -1,15 +1,16 @@
 open StdLabels
 
 (** Taken from: https://caml.inria.fr/pub/docs/manual-ocaml/lex.html *)
-let is_reserved = function
-  | "and" | "as" | "assert" | "asr" | "begin" | "class" | "constraint" | "do" | "done"
-  | "downto" | "else" | "end" | "exception" | "external" | "false" | "for" | "fun"
-  | "function" | "functor" | "if" | "in" | "include" | "inherit" | "initializer"
-  | "land" | "lazy" | "let" | "lor" | "lsl" | "lsr" | "lxor" | "match" | "method"
-  | "mod" | "module" | "mutable" | "new" | "nonrec" | "object" | "of" | "open" | "or"
-  | "private" | "rec" | "sig" | "struct" | "then" | "to" | "true" | "try" | "type"
-  | "val" | "virtual" | "when" | "while" | "with" -> true
-  | _ -> false
+let is_reserved =
+  let set =
+    [ "and" ; "as" ; "assert" ; "asr" ; "begin" ; "class" ; "constraint" ; "do" ; "done"
+    ; "downto" ; "else" ; "end" ; "exception" ; "external" ; "false" ; "for" ; "fun"
+    ; "function" ; "functor" ; "if" ; "in" ; "include" ; "inherit" ; "initializer"
+    ; "land" ; "lazy" ; "let" ; "lor" ; "lsl" ; "lsr" ; "lxor" ; "match" ; "method"
+    ; "mod" ; "module" ; "mutable" ; "new" ; "nonrec" ; "object" ; "of" ; "open" ; "or"
+    ; "private" ; "rec" ; "sig" ; "struct" ; "then" ; "to" ; "true" ; "try" ; "type"
+    ; "val" ; "virtual" ; "when" ; "while" ; "with"] in
+  List.mem ~set
 
 let to_snake_case ident =
   let to_list s =

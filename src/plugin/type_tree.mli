@@ -8,7 +8,7 @@ end
 
 type element = {
   file_name : string; (** filename of the .proto file *)
-  ocaml_name : string;
+  ocaml_name : string list;
   cyclic : bool;
 }
 

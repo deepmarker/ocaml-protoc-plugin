@@ -52,10 +52,9 @@ let get_scoped_name ?postfix t name =
   let type_name = match String.equal file_name t.name with
     | true ->
       ocaml_name
-      |> String.split_on_char ~sep:'.'
       |> drop t.package_depth
       |> String.concat ~sep:"."
-    | false -> String.concat ~sep:"." [file_name; ocaml_name]
+    | false -> String.concat ~sep:"." (file_name :: ocaml_name)
   in
   (* Strip away the package depth *)
   Option.fold ~none:type_name ~some:(fun postfix -> type_name ^ "." ^ postfix) postfix
@@ -64,7 +63,7 @@ let get_name t name =
   let open Type_tree in
   let path = t.proto_path ^ "." ^ name in
   match StringMap.find_opt path t.type_db with
-    | Some { ocaml_name; _ } -> String.split_on_char ~sep:'.' ocaml_name |> List.rev |> List.hd
+    | Some { ocaml_name; _ } -> List.rev ocaml_name |> List.hd
     | None -> failwith (Printf.sprintf "Cannot find %s in %s." name t.proto_path)
 
 let get_name_exn t name =
