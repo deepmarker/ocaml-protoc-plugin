@@ -96,7 +96,7 @@ let emit_service_type scope ServiceDescriptorProto.{ name; method' = methods; _ 
   let name = Option.value ~default:"Service definitions must have a name" name in
   let t = Code.init () in
   Code.emit t `Begin "module %s = struct" (Scope.get_name scope name);
-  let local_scope = Scope.Local.init () in
+  let local_scope = Scope.Local.create () in
 
   List.iter ~f:(emit_method t local_scope (Scope.push scope name) name) methods;
   Code.emit t `End "end";

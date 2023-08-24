@@ -17,24 +17,24 @@ type element = {
 
 type t = element StringMap.t
 
-let create_cyclic_map types =
-  let is_cyclic map name =
-    let rec inner name seen =
-      (* If a type has more than one depend, then the cyclic chain is broken, and
-         we can stop processing further *)
-      match StringMap.find_opt name map with
-      | None -> seen
-      | Some depends when StringSet.cardinal depends = 1 ->
-        let unseen = StringSet.diff depends seen in
-        let seen = StringSet.union depends seen in
-        StringSet.fold ~init:seen ~f:inner unseen
-      | Some _ -> seen
-    in
-    let seen = inner name StringSet.empty in
-    StringSet.mem name seen
-  in
-  let map = List.fold_left ~init:StringMap.empty ~f:(Type.traverse "") types in
-  StringMap.mapi ~f:(fun name _ -> is_cyclic map name) map
+(* let is_cyclic map fqn = *)
+(*   let rec inner fqn seen = *)
+(*     match StringListMap.find_opt fqn map with *)
+(*     | Some depends when StringSet.cardinal depends = 1 -> *)
+(*       let unseen = StringSet.diff depends seen in *)
+(*       let seen = StringSet.union depends seen in *)
+(*       StringSet.fold unseen ~init:seen ~f:inner *)
+(*     | _ -> *)
+(*       (\* If a type has more than one depend, then the cyclic chain is broken, and *)
+(*          we can stop processing further *\) *)
+(*       seen *)
+(*   in *)
+(*   let seen = inner fqn StringSet.empty in *)
+(*   StringSet.mem fqn seen *)
+
+(* let create_cyclic_map types = *)
+(*   let map = Type.to_names types in *)
+(*   StringListMap.mapi ~f:(fun fqn _ -> is_cyclic map fqn) map *)
 
 (** Create a map: proto_name -> ocaml_name.
     Mapping is done in multiple passes to prioritize which mapping wins in case of name clashes
@@ -161,7 +161,7 @@ let option_mangle_names FileDescriptorProto.{ options; _ } =
   | Some (Error _e) -> failwith "Could not parse ocaml-protoc-plugin options with id 1074"
 
 let file_db_of_proto proto_file =
-  let types = types_of_fd proto_file in
+  let types = Type.of_fd proto_file in
   let name = Option.get proto_file.name in
   let cyclic_map = create_cyclic_map types in
   create_file_db ~mangle:(option_mangle_names proto_file) cyclic_map name types

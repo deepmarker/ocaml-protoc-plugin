@@ -33,7 +33,7 @@ let parse_request Plugin.CodeGeneratorRequest.{file_to_generate = files_to_gener
       List.mem ~set:files_to_generate (Option.get name)
     ) proto_files
   in
-  let scope = Scope.init proto_files in
+  let scope = Scope.create proto_files in
   List.map target_proto_files ~f:(fun (proto_file : Descriptor.FileDescriptorProto.t) ->
     let scope = Scope.for_descriptor scope proto_file in
     let name, code = Emit.parse_proto_file ~params scope proto_file in

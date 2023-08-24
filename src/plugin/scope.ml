@@ -7,7 +7,7 @@ let dump_tree = false
 (** Module to avoid name clashes in a local scope *)
 module Local = struct
   type t = (string, unit) Hashtbl.t
-  let init () : t = Hashtbl.create 2
+  let create () : t = Hashtbl.create 2
   let get_unique_name t preferred_name =
     let rec inner name =
       match Hashtbl.mem t name with
@@ -30,7 +30,7 @@ type t = {
   type_db: Type_tree.t
 }
 
-let init files =
+let create files =
   let type_db = Type_tree.create files in
   if dump_tree then Type_tree.dump type_db;
   { name = ""; proto_path = ""; package_depth = 0; type_db; }

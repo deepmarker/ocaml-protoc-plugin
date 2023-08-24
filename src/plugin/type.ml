@@ -82,3 +82,35 @@ let of_fd (t : FileDescriptorProto.t) =
   let name = Option.get t.name in
   let package = Option.fold t.package ~none:[] ~some:(String.split_on_char ~sep:'.') in
   file name package deps
+
+open Base
+
+let split =
+  String.split_on_char ~sep:'.'
+
+let add_to_path path name =
+  List.fold_left name ~init:path ~f:(fun a x -> x :: a)
+
+(* Produce a map fqn -> deps. All names are fqn. *)
+(* acc is a string string map of path in reverse order! *)
+let to_names ({ file_name = _; package; contents }: t) =
+  let on_elt path a { name; kind } =
+    let a, deps =
+      match kind with
+      | Extension ->
+        (* We allow things to be extended multiple times I guess? *)
+        let key = add_to_path path (split name) in
+        StringListMap.add a ~key ~data:StringSet.empty, StringSet.empty
+      | Service _
+      | Enum _ ->
+        StringListMap.update a ~key:(name :: path)
+          ~f:(function None -> Some StringSet.empty | Some _ -> assert false), StringSet.empty
+      | Message { types; depends; plain_fields = _; oneof_fields = _}  ->
+        (* Add depends, these are absolute names *)
+        let a = StringListMap.add a ~key:(add_to_path [] depends) ~data:StringSet.empty in
+        a, List.fold_left types ~init:StringSet.empty ~f:(fun a x -> StringSet.add x.name a)
+    in
+    StringListMap.add a ~key:path ~data:deps
+  in
+  let path = List.rev package in
+  List.fold_left contents ~f:(on_elt path) ~init:StringListMap.empty

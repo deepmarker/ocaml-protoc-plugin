@@ -10,12 +10,12 @@ and elt = {
 }
 
 and kind  =
-  | Extension
+  | Extension (* name is fqn of the message to be extended *)
   | Service of { methods: string list }
   | Enum of { values: string list }
   | Message of {
       types: elt list;
-      depends: string list;
+      depends: string list; (* non local definitions, i.e. from other packages *)
       plain_fields: string list;
       oneof_fields: string list list;
     }

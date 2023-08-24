@@ -1,14 +1,17 @@
+open Spec.Descriptor.Google.Protobuf
+
 module Local : sig
   type t
-  val init: unit -> t
+  val create: unit -> t
   val get_unique_name: t -> string -> string
 end
 
+(** Type of a scope *)
 type t
 
-val init : Spec.Descriptor.Google.Protobuf.FileDescriptorProto.t list -> t
+val create : FileDescriptorProto.t list -> t
 
-val for_descriptor: t -> Spec.Descriptor.Google.Protobuf.FileDescriptorProto.t -> t
+val for_descriptor: t -> FileDescriptorProto.t -> t
 
 (** Push an identifier to the current scope *)
 val push : t -> string -> t

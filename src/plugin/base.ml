@@ -13,3 +13,13 @@ module StringMap = struct
       | Some _ -> failwith (Printf.sprintf "Key %s already exists" key)
     ) map
 end
+
+module StringList = struct
+  type t = string list
+
+  let compare = List.compare ~cmp:String.compare
+end
+
+module StringListSet = Set.Make(StringList)
+module StringListMap = Map.Make(StringList)
+
