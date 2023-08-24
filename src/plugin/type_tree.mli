@@ -1,10 +1,5 @@
-open MoreLabels
 open Spec.Descriptor.Google.Protobuf
-
-module StringMap : sig
-  include Map.S with type key = string
-  val add_uniq: key:key -> data:'a -> 'a t -> 'a t
-end
+open Base
 
 type element = {
   file_name : string; (** filename of the .proto file *)

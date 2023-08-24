@@ -1,62 +1,13 @@
 open StdLabels
 open MoreLabels
 open Spec.Descriptor.Google.Protobuf
-
-module StringSet = Set.Make(String)
-module StringMap = struct
-  include Map.Make(String)
-
-  (** Fail with an error if the key already exists *)
-  let add_uniq ~key ~data map =
-    update ~key ~f:(function
-      | None -> Some data
-      | Some _ -> failwith (Printf.sprintf "Key %s already exists" key)
-    ) map
-end
+open Base
 
 let module_name_of_proto file =
   Filename.chop_extension file
   |> Filename.basename
   |> String.capitalize_ascii
   |> String.map ~f:(function '-' -> '_' | c -> c)
-
-module Type = struct
-  (* Name is definitely relative, here. *)
-  type t = {
-    name: string;
-    types: t list;
-    depends: string list;
-    fields: string list * string list list;
-    enum_names: string list;
-    service_names: string list
-  }
-
-  let create ?(types=[]) ?(depends=[]) ?(fields=([], [])) ?(enum_names=[]) ?(service_names=[]) name =
-    { name; types; depends; fields; enum_names; service_names }
-
-  let of_enum EnumDescriptorProto.{ name; value = values; _ } =
-    let name = Option.get name in
-    let enum_names =
-      List.map ~f:(fun EnumValueDescriptorProto.{ name; _ } -> Option.get name) values
-    in
-    create ~enum_names name
-
-  let of_service ServiceDescriptorProto.{ name; method' = methods; _ } =
-  let name = Option.get name in
-  let service_names =
-    List.map ~f:(fun MethodDescriptorProto.{ name; _ } -> Option.get name) methods
-  in
-  create ~service_names name
-
-  let of_extension FieldDescriptorProto.{ name; _ } =
-    let name = Option.get name in
-    create name
-
-  let rec traverse path map { name; types; depends; _ } =
-    let path = path ^ "." ^ name in
-    let map = StringMap.add ~key:path ~data:(StringSet.of_list depends) map in
-    List.fold_left ~init:map ~f:(traverse path) types
-end
 
 type element = {
   file_name: string;
@@ -65,67 +16,6 @@ type element = {
 }
 
 type t = element StringMap.t
-
-let split_oneof_fields fields =
-  let rec group acc ~eq = function
-    | [] when acc = [] -> []
-    | [] -> [ List.rev acc ]
-    | x1 :: (x2 :: _  as xs) when eq x1 x2 -> group (x1 :: acc) ~eq xs
-    | x :: xs -> (List.rev (x :: acc)) :: group [] ~eq xs
-  in
-  let field_number_of_field = function
-    | FieldDescriptorProto.{ oneof_index = None; _ } -> failwith "Only oneof fields here"
-    | FieldDescriptorProto.{ oneof_index = Some number; _ } -> number
-  in
-
-  let fields = List.sort ~cmp:(fun a b -> compare (field_number_of_field a) (field_number_of_field b)) fields in
-  group [] ~eq:(fun a b -> field_number_of_field a = field_number_of_field b) fields
-
-let rec map_message DescriptorProto.{ name; field = fields; nested_type = nested_types; enum_type = enums; oneof_decl = oneof_decls; extension = extensions; _} =
-  let name = Option.value ~default:"All messages must have a name" name in
-  let depends =
-    List.fold_left ~init:[] ~f:(fun acc -> function
-      | FieldDescriptorProto.{ type_name = Some type_name; type' = Some Type.TYPE_MESSAGE; _ } ->
-        type_name :: acc
-      | FieldDescriptorProto.{ type_name = Some type_name; type' = Some Type.TYPE_ENUM; _ } ->
-        type_name :: acc
-      | _ -> acc
-    ) fields
-  in
-  let enums = List.map ~f:Type.of_enum enums in
-  let extensions = List.map ~f:Type.of_extension extensions in
-  let nested_types = List.map ~f:map_message nested_types in
-  let types = List.sort ~cmp:compare (enums @ extensions @ nested_types) in
-  let fields =
-    let field_name FieldDescriptorProto.{ name; _} =
-      Option.value ~default:"Field names cannot be null" name
-    in
-    let (plain_fields, oneof_fields) = List.partition ~f:(function FieldDescriptorProto.{ proto3_optional = Some true; _ } -> true
-                                                                 | { oneof_index = None; _ } -> true
-                                                                 | _ -> false) fields in
-    let plain_fields =
-      let acc = List.map ~f:field_name plain_fields in
-      List.fold_left ~init:acc ~f:(fun acc OneofDescriptorProto.{ name; _ } ->
-        (Option.value ~default:"Oneof names cannot be null" name) :: acc
-      ) oneof_decls
-    in
-    let oneof_fields =
-      split_oneof_fields oneof_fields
-      |> List.map ~f:(List.map ~f:field_name)
-    in
-    plain_fields, oneof_fields
-  in
-  Type.create name ~types ~depends ~fields
-
-let types_of_fd (t:FileDescriptorProto.t) =
-  let messages = List.map ~f:map_message t.message_type in
-  let enums = List.map ~f:Type.of_enum t.enum_type in
-  let services = List.map ~f:Type.of_service t.service in
-  let extensions = List.map ~f:Type.of_extension t.extension in
-  let types = enums @ messages @ services @ extensions in
-  let packages = Option.fold ~none:[] ~some:(String.split_on_char ~sep:'.') t.package in
-  let types = List.fold_right packages ~init:types ~f:(fun name types -> [Type.create ~types name]) in
-  types
 
 let create_cyclic_map types =
   let is_cyclic map name =
