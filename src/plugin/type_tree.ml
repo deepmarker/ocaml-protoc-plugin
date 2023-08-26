@@ -3,19 +3,8 @@ open MoreLabels
 open Spec.Descriptor.Google.Protobuf
 open Base
 
-let module_name_of_proto file =
-  Filename.chop_extension file
-  |> Filename.basename
-  |> String.capitalize_ascii
-  |> String.map ~f:(function '-' -> '_' | c -> c)
-
-type element = {
-  file_name: string;
-  ocaml_name: string list;
-  cyclic: bool
-}
-
-type t = element StringMap.t
+(* *)
+type t = (string list, Type.t) Hashtbl.t
 
 (* let is_cyclic map fqn = *)
 (*   let rec inner fqn seen = *)
@@ -36,14 +25,13 @@ type t = element StringMap.t
 (*   let map = Type.to_names types in *)
 (*   StringListMap.mapi ~f:(fun fqn _ -> is_cyclic map fqn) map *)
 
-(** Create a map: proto_name -> ocaml_name.
-    Mapping is done in multiple passes to prioritize which mapping wins in case of name clashes
-*)
 let rec uniq_name names ocaml_name =
   match List.assoc_opt ocaml_name names with
   | None -> ocaml_name
   | Some _ -> uniq_name names (ocaml_name ^ "'")
 
+(** Create a map: proto_name -> ocaml_name.
+    Mapping is done in multiple passes to prioritize which mapping wins in case of name clashes *)
 let create_name_map ~standard_f ~mangle_f names =
   let names =
     List.map ~f:(fun name ->
@@ -86,11 +74,11 @@ let add_names ~file_name ~path ~ocaml_name t names =
   StringMap.fold names ~init:t ~f:(fun ~key ~data map ->
     StringMap.add_uniq
       ~key:(path ^ "." ^ key)
-      ~data:({ file_name; ocaml_name = ocaml_name @ [data]; cyclic = false })
+      ~data:({ file_name; ocaml_name = ocaml_name @ [data] })
       map
   )
 
-let rec map_type file_name cyclic_map ~mangle_f ~map ~name_map path (t:Type.t) =
+let rec map_type file_name ~mangle_f ~map ~name_map path (t:Type.t) =
   let ocaml_name =
     let ocaml_name = StringMap.find t.name name_map in
     match StringMap.find path map with
@@ -98,7 +86,6 @@ let rec map_type file_name cyclic_map ~mangle_f ~map ~name_map path (t:Type.t) =
     | { ocaml_name = path; _ } -> ocaml_name @ path
   in
   let path = path ^ "." ^ t.name in
-  let cyclic = StringMap.find path cyclic_map in
   let map =
     create_name_map
       ~standard_f:(Names.field_name ~mangle_f:(fun x -> x))
@@ -130,11 +117,11 @@ let rec map_type file_name cyclic_map ~mangle_f ~map ~name_map path (t:Type.t) =
       t.service_names
     |> add_names ~file_name ~path ~ocaml_name map
   in
-  let map = StringMap.add_uniq ~key:path ~data:{ file_name; ocaml_name; cyclic } map in
-  traverse_types file_name cyclic_map ~mangle_f map path t.types
+  let map = StringMap.add_uniq ~key:path ~data:{ file_name; ocaml_name } map in
+  traverse_types file_name ~mangle_f map path t.types
 
 (** Add all types + all dependencies of those types *)
-and traverse_types file_name cyclic_map ~mangle_f map path types =
+and traverse_types file_name ~mangle_f map path types =
   let name_map =
     List.map ~f:(fun { Type.name; _ } -> name) types |>
     create_name_map
@@ -142,15 +129,15 @@ and traverse_types file_name cyclic_map ~mangle_f map path types =
       ~mangle_f:(Names.module_name ~mangle_f)
   in
   List.fold_left types ~init:map ~f:(fun map type_ ->
-    map_type file_name cyclic_map ~mangle_f ~map ~name_map path type_)
+    map_type file_name ~mangle_f ~map ~name_map path type_)
 
 (** Create a type db: map proto-type -> { module_name, ocaml_name, is_cyclic } *)
-let create_file_db ~mangle cyclic_map file_name types =
+let create_file_db ~mangle file_name types =
   let mangle_f = match mangle with
     | true -> Names.to_snake_case
     | false -> fun x -> x
   in
-  traverse_types file_name cyclic_map ~mangle_f StringMap.empty "" types
+  traverse_types file_name ~mangle_f StringMap.empty "" types
 
 let option_mangle_names FileDescriptorProto.{ options; _ } =
   Option.map Spec.Options.Ocaml_options.get options

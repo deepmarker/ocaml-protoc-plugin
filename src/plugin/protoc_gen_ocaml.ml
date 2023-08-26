@@ -17,7 +17,6 @@ let write response =
   |> Ocaml_protoc_plugin.Writer.contents
   |> output_string stdout
 
-
 let parse_request Plugin.CodeGeneratorRequest.{file_to_generate = files_to_generate; parameter = parameters; proto_file = proto_files; compiler_version = _} =
   let params = Parameters.parse (Option.value ~default:"" parameters) in
   if params.debug then (
@@ -29,13 +28,14 @@ let parse_request Plugin.CodeGeneratorRequest.{file_to_generate = files_to_gener
       Format.eprintf "%s (%s)\n" name package)
     ) ;
   (* Find the correct file to process *)
-  let target_proto_files = List.filter ~f:(fun Descriptor.FileDescriptorProto.{name; _} ->
+  let target_proto_files =
+    List.filter proto_files ~f:(fun Descriptor.FileDescriptorProto.{name; _} ->
       List.mem ~set:files_to_generate (Option.get name)
-    ) proto_files
+    )
   in
-  let scope = Scope.create proto_files in
+  let type_db = Type_tree.create proto_files in
   List.map target_proto_files ~f:(fun (proto_file : Descriptor.FileDescriptorProto.t) ->
-    let scope = Scope.for_descriptor scope proto_file in
+    let scope = Scope.create proto_file type_db in
     let name, code = Emit.parse_proto_file ~params scope proto_file in
     (* if params.debug then Printf.eprintf "%s\n%!" (Code.contents code); *)
     Filename.basename name, code

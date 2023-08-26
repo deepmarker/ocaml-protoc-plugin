@@ -77,7 +77,9 @@ let make_default: type a. a spec -> string -> a = function
   | Bool -> bool_of_string
   | String -> fun x -> x
   | Bytes -> Bytes.of_string
-  | Enum _ -> fun x -> failwith (sprintf "Defaults for enums cannot be handled here: %s" x) (* Scope.get_scoped_name ~postfix:x scope type_name*)
+  | Enum _ -> fun x ->
+    Format.kasprintf failwith "Defaults for enums cannot be handled here: %s" x
+  (* Scope.get_scoped_name ~postfix:x scope type_name*)
   | Message _ -> failwith "Messages do not have defaults"
 
 let string_of_default: type a. a spec -> a -> string = function
@@ -229,7 +231,8 @@ let spec_of_enum ~scope type_name default =
   let type' = Scope.get_scoped_name ~postfix:"t" scope type_name in
   let deserialize_func = Scope.get_scoped_name ~postfix:"from_int" scope type_name in
   let serialize_func = Scope.get_scoped_name ~postfix:"to_int" scope type_name in
-  let default = Option.map (fun default -> Scope.get_scoped_name ~postfix:default scope type_name) default in
+  let default =
+    Option.map (fun default -> Scope.get_scoped_name ~postfix:default scope type_name) default in
   Enum (type', deserialize_func, serialize_func, default)
 
 open Parameters
