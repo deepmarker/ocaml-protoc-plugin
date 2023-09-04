@@ -9,7 +9,7 @@ end
 (** Type of a scope *)
 type t
 
-val create: FileDescriptorProto.t -> Type_tree.t -> t
+val create: FileDescriptorProto.t -> Type.t -> t
 
 (** Push an identifier to the current scope *)
 val push : t -> string -> t
@@ -31,7 +31,7 @@ val get_name_exn : t -> string option -> string
 val get_current_scope : t -> string
 
 (** Get the package name. This function assumes callee is in service scope *)
-val get_package_name : t -> string option
+val get_package_name : t -> string list
 
 (** Tell if the type pointed to by the current scope is part of a cycle. *)
 val is_cyclic: t -> bool

@@ -22,3 +22,10 @@ end
 
 module StringListSet = Set.Make(StringList)
 module StringListMap = Map.Make(StringList)
+
+let debug_mode = true
+
+let debug =
+  match debug_mode with
+  | true -> ref stderr
+  | false -> ref (Out_channel.open_text "/dev/null")

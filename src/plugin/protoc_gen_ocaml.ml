@@ -33,7 +33,10 @@ let parse_request Plugin.CodeGeneratorRequest.{file_to_generate = files_to_gener
       List.mem ~set:files_to_generate (Option.get name)
     )
   in
-  let type_db = Type_tree.create proto_files in
+  let type_db = List.fold_left proto_files ~init:Type.empty ~f:(Type.add_fd) in
+  (* Debug *)
+  Type.dump type_db !Base.debug ;
+  (* *)
   List.map target_proto_files ~f:(fun (proto_file : Descriptor.FileDescriptorProto.t) ->
     let scope = Scope.create proto_file type_db in
     let name, code = Emit.parse_proto_file ~params scope proto_file in
@@ -41,8 +44,7 @@ let parse_request Plugin.CodeGeneratorRequest.{file_to_generate = files_to_gener
     Filename.basename name, code
   )
 
-
-let () =
+let main () =
   let request = read () in
   let outputs = parse_request request in
   let response_of_output (name, code) =
@@ -52,3 +54,14 @@ let () =
     Plugin.CodeGeneratorResponse.make ~supported_features:1 ~file:(List.map ~f:response_of_output outputs) ()
   in
   write response
+
+let main () =
+  Printexc.record_backtrace true;
+  try main () with
+  | exn ->
+    let bt = Printexc.get_raw_backtrace () in
+    Printexc.raise_with_backtrace exn bt
+
+let () =
+  main ()
+  (* Fun.protect main ~finally:(fun () -> Out_channel.close !Base.debug) *)

@@ -20,67 +20,81 @@ end
 
 open Spec.Descriptor.Google.Protobuf
 
+(* Type of a scope.  *)
 type t = {
   name: string; (* Protobuf file name. *)
-  package: string list ; (* package in normal order *)
-  proto_path: string list ; (* path component in reverse order. *)
-  type_db: Type_tree.t
+  path: string list ; (* package in normal order. Current package we're in??  *)
+  package_length: int ; (* length of package name *)
+  type_db: Type.t
 }
 
 let create FileDescriptorProto.{ name; package; _ } type_db =
   let name = Option.get name in
-  let package =
-    Option.fold ~none:[] ~some:(String.split_on_char ~sep:'.') package in
-  { name; package; proto_path = []; type_db }
+  let path =
+    Option.fold ~none:[] ~some:(String.split_on_char ~sep:'.') package |> List.rev in
+  let package_length = List.length path in
+  { name; package_length; path ; type_db }
 
-let push t name = { t with proto_path = name :: t.proto_path }
-
-let rec drop n = function
-  | [] -> []
-  | _ :: xs when n > 0 -> drop (n - 1) xs
-  | xs -> xs
+let push t name = { t with path = name :: t.path }
 
 (* proto_name is raw FQN protobuf name (normal order). *)
 let get_scoped_name ?postfix t proto_name =
+  (* Printf.fprintf !Base.debug "get_scoped_name %s\n" proto_name ; *)
   let name = String.split_on_char ~sep:'.' proto_name in
-  let ocaml_name = Type_tree.ocaml_name t.type_db name in
-  let file_name = Type_tree.file_name t.type_db name in
+  let name = match name with
+    | "" :: tl ->
+      (* Sometimes names with empty first prefix are pushed here! *)
+      List.rev tl
+    | _ -> List.rev name
+  in
+  let ocaml_name = Type.ocaml_name t.type_db name in
+  let file_name = Type.file_name t.type_db name in
   (* Strip away the package depth *)
   let type_name = match String.equal file_name t.name with
     | true ->
       (* Local name *)
       ocaml_name
-      |> drop (List.length t.package)
-      |> String.concat ~sep:"."
     | false ->
-      (* Remote name: check this is correct. *)
-      String.concat ~sep:"." (file_name :: ocaml_name)
+      (* Remote name, prefix with file *)
+      Filename.(basename file_name|> chop_extension |> String.capitalize_ascii) ^ "." ^ ocaml_name
   in
   Option.fold postfix ~none:type_name ~some:(fun postfix -> type_name ^ "." ^ postfix)
 
 (* Relative name, last element? *)
 let get_name t name =
-  let path = name :: t.proto_path in
-  match Type_tree.ocaml_name t.type_db path with
-  | exception _ ->
-    failwith (Printf.sprintf "Cannot find %s in %s." name (String.concat ~sep:"." t.proto_path))
+  (* Look for name in full path! *)
+  let path = name :: t.path in
+  match Type.ocaml_name t.type_db path with
+  | exception exn ->
+    Type.dump t.type_db !Base.debug ;
+    Printf.fprintf !Base.debug "# %s\n" (Printexc.to_string exn) ;
+    let path = String.concat ~sep:"." (List.rev t.path) in
+    failwith (Printf.sprintf "Cannot find %s in <%s> (DB has %d entries)"
+                name path (Type.length t.type_db) )
   | ocaml_name ->
     (* Get last element. *)
-    List.rev ocaml_name |> List.hd
+    ocaml_name
 
 let get_name_exn t name = get_name t (Option.get name)
 
 (* Dunno what this is for!! *)
 let get_current_scope t =
-  let file_name = Type_tree.file_name t.type_db t.proto_path in
-  let __ =(String.lowercase_ascii file_name) :: List.rev t.proto_path in
+  let file_name = Type.file_name t.type_db t.path in
+  let __ =(String.lowercase_ascii file_name) :: List.rev t.path in
   (* TODO: FIX!! *)
   ""
 
-let get_package_name { proto_path; _ } =
-  match proto_path with
-  | [] -> None
-  | _ :: xs -> List.rev xs |> String.concat ~sep:"." |> Option.some
+let drop n xs =
+  assert (n <= List.length xs);
+  let rec inner n xs = if n <= 0 then xs
+    else inner (pred n) (List.tl xs)
+  in inner n xs
 
-let is_cyclic t =  Type_tree.is_cyclic t.type_db t.proto_path
+let get_package_name { path; package_length; _ } =
+  let len = List.length path in
+  let package = drop (len - package_length) path in
+  List.rev package
+
+
+let is_cyclic t =  Type.is_cyclic t.type_db t.path
 

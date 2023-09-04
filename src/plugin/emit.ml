@@ -60,14 +60,15 @@ let emit_method t local_scope scope service_name MethodDescriptorProto.{ name; i
      mapping if/when we deprecate the old API *)
   let capitalized_name = String.capitalize_ascii uncapitalized_name in
 
-  let package_name_opt = Scope.get_package_name scope in
+  let package_segs = Scope.get_package_name scope in
   let package_name =
-    match package_name_opt with
-    | None -> ""
-    | Some p -> p ^ "."
+    match package_segs with
+    | [] -> ""
+    | p -> String.concat ~sep:"." p
   in
   (* We're in some context right now *)
   let input_type = Option.get input_type in
+  (* Printf.fprintf !Base.debug "input type = %s\n" input_type ; *)
   let output_type = Option.get output_type in
   let input = Scope.get_scoped_name scope input_type in
   let input_t = Scope.get_scoped_name scope ~postfix:"t" input_type in
@@ -75,7 +76,7 @@ let emit_method t local_scope scope service_name MethodDescriptorProto.{ name; i
   let output_t = Scope.get_scoped_name scope ~postfix:"t" output_type in
   let open Code in
   emit t `Begin "module %s = struct" capitalized_name;
-  emit t `None "let package_name = %s" (Option.fold ~none:"None" ~some:(fun n -> Printf.sprintf "Some \"%s\"" n) package_name_opt);
+  emit t `None "let package_name = %s" (match package_name with "" -> "None" | x -> Printf.sprintf {|Some "%s"|} x);
   emit t `None "let service_name = \"%s\"" service_name;
   emit t `None "let method_name = \"%s\"" name;
   emit t `None "let name = \"/%s%s/%s\"" package_name service_name name;
@@ -102,11 +103,13 @@ let emit_service_type scope ServiceDescriptorProto.{ name; method' = methods; _ 
   Code.emit t `End "end";
   t
 
-let emit_extension ~scope ~params field =
-  let FieldDescriptorProto.{ name; extendee; _ } = field in
-  let name = Option.value ~default:"Extensions must have a name" name in
-  let module_name = (Scope.get_name scope name) in
-  let extendee = Option.get extendee in
+let emit_extension ~scope ~params (field : FieldDescriptorProto.t) =
+  let name = Option.get field.name in
+  (* I guess we need to push extendee scope here! *)
+  let extendee = Option.get field.extendee in
+  let extendee_segs = String.split_on_char extendee ~sep:'.' |> List.tl in
+  let scope = List.fold_left extendee_segs ~init:scope ~f:Scope.push in
+  let module_name = Scope.get_name scope name in
   let extendee_type = Scope.get_scoped_name scope ~postfix:"t" extendee in
   let extendee_field = Scope.get_scoped_name scope ~postfix:"extensions'" extendee in
   (* Create the type of the type' / type_name *)
@@ -183,10 +186,15 @@ let rec emit_message ~params ~syntax scope
       let module_name = Scope.get_name scope name in
       module_name, Scope.push scope name
   in
+
+  (* Emit nested types *)
+
+
   List.map ~f:(emit_enum_type ~scope ~params) enum_types
   @ List.map ~f:(emit_message ~params ~syntax scope) nested_types
   @ List.map ~f:(emit_extension ~scope ~params) extensions
   |> emit_nested_types ~syntax ~signature ~implementation;
+
   let is_map_entry = is_map_entry options in
   let is_cyclic = Scope.is_cyclic scope in
   let extension_ranges =
@@ -212,7 +220,7 @@ let rec emit_message ~params ~syntax scope
   emit signature `None "val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result";
 
   emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
-  emit implementation `None "type t = %s%s" type' params.annot;
+  emit implementation `None "type t = %s %s" type' params.annot;
   emit implementation `Begin "let make =";
   emit implementation `None "%s" default_constructor_impl;
   emit implementation `End "";
@@ -232,22 +240,12 @@ let rec emit_message ~params ~syntax scope
   emit implementation `End "";
   {module_name; signature; implementation}
 
-let rec wrap_packages ~params ~syntax scope message_type services = function
-  | [] ->
-    let {module_name = _; implementation; _} = emit_message ~params ~syntax scope message_type in
-    List.iter ~f:(fun service ->
-        Code.append implementation (emit_service_type scope service)
-      ) services;
-    implementation
-
-  | package :: packages ->
-    let implementation = Code.init () in
-    let package_name = Scope.get_name scope package in
-    let scope = Scope.push scope package in
-    Code.emit implementation `Begin "module %s = struct" package_name;
-    Code.append implementation (wrap_packages ~params ~syntax scope message_type services packages);
-    Code.emit implementation `End "end";
-    implementation
+let append_impl ~params ~syntax scope message_type services =
+  let {module_name = _; implementation; _} = emit_message ~params ~syntax scope message_type in
+  List.iter ~f:(fun service ->
+    Code.append implementation (emit_service_type scope service)
+  ) services;
+  implementation
 
 let emit_banner impl (params:Parameters.t) name syntax =
   let open Code in
@@ -271,7 +269,7 @@ let emit_banner impl (params:Parameters.t) name syntax =
   emit impl `None "*)"
 
 let parse_proto_file ~params scope
-    FileDescriptorProto.{ name; package; dependency = dependencies; public_dependency = _;
+    FileDescriptorProto.{ name; package=_; dependency = _; public_dependency = _;
                           weak_dependency = _; message_type = message_types;
                           enum_type = enum_types; service = services; extension;
                           options = _; source_code_info = _; syntax; }
@@ -290,22 +288,12 @@ let parse_proto_file ~params scope
   List.iter
     ("Ocaml_protoc_plugin.Runtime" :: params.opens)
     ~f:(emit implementation `None "open %s [@@warning \"-33\"]" ) ;
-  (* Open dependency modules. We need to do something special here. *)
-  List.iter dependencies ~f:(fun proto_file ->
-    (* TODO: *)
-    let module_name = Type_tree.module_name_of_proto proto_file in
-    Code.emit implementation `None "module %s = %s" module_name module_name;
-  ) ;
-  let package =
-    Option.fold ~none:[] ~some:(String.split_on_char ~sep:'.') package
-  in
   let message_type =
     DescriptorProto.{name = None; nested_type=message_types; enum_type = enum_types;
                      field = []; extension; extension_range = []; oneof_decl = [];
                      options = None; reserved_range = []; reserved_name = []; }
   in
-  wrap_packages ~params ~syntax scope message_type services package
-  |> append implementation;
+  append implementation (append_impl ~params ~syntax scope message_type services);
   let ocaml_name =
     (String.map name ~f:(function '-' -> '_' | c -> c)
      |> Filename.remove_extension) ^ ".ml" in

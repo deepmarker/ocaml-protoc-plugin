@@ -1,4 +1,5 @@
 open StdLabels
+open Printf
 
 (* This module is a bit elaborate.
    The idea is to construct the actual types needed
@@ -43,8 +44,6 @@ type t = {
   default_constructor_sig: string;
   default_constructor_impl: string;
 }
-
-let sprintf = Printf.sprintf
 
 let make_default: type a. a spec -> string -> a = function
   | Double -> float_of_string
@@ -222,6 +221,10 @@ let type_of_spec: type a. a spec -> string = function
   | Message (type', _, _, _) -> type'
 
 let spec_of_message ~scope type_name =
+  (* debug *)
+  if (type_name.[0] = '.' || type_name.[String.length type_name  - 1] = '.') then
+    Format.kasprintf invalid_arg "Invalid type name %s" type_name ;
+  (* debug *)
   let type' = Scope.get_scoped_name ~postfix:"t" scope type_name in
   let deserialize_func = Scope.get_scoped_name ~postfix:"from_proto" scope type_name in
   let serialize_func = Scope.get_scoped_name ~postfix:"to_proto" scope type_name in
@@ -236,6 +239,7 @@ let spec_of_enum ~scope type_name default =
   Enum (type', deserialize_func, serialize_func, default)
 
 open Parameters
+
 let spec_of_type ~params ~scope type_name default =
   let open FieldDescriptorProto.Type in
   function
@@ -343,7 +347,12 @@ let type_name_of_basic_type (t:FieldDescriptorProto.Type.t) = match t with
   | TYPE_MESSAGE -> assert false
 
 let type_name_of_field ({type_name; type'; _ }:FieldDescriptorProto.t) =
-  match type_name with Some x -> x | None -> type_name_of_basic_type (Option.get type')
+  match type_name with
+  | Some x when x.[0] = '.' ->
+    (* Indicates global name??? *)
+    String.sub x ~pos:1 ~len:(String.length x - 1)
+  | Some x -> x
+  | None -> type_name_of_basic_type (Option.get type')
 
 let c_of_field ~params ~syntax ~scope field =
   let open FieldDescriptorProto in
@@ -351,6 +360,10 @@ let c_of_field ~params ~syntax ~scope field =
   let number = Option.get field.number in
   let name = Option.get field.name in
   let type_name = type_name_of_field field in
+  (* debug *)
+  if (type_name.[0] = '.' || type_name.[String.length type_name  - 1] = '.') then
+    Format.kasprintf invalid_arg "Invalid type name %s" type_name ;
+  (* debug *)
   match syntax, field with
   (* Errors *)
 

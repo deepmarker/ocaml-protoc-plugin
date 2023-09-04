@@ -55,5 +55,8 @@ let module_name ?(mangle_f=(fun x -> x)) name =
   | '_' -> "P" ^ name
   | _ -> String.capitalize_ascii name
 
-let poly_constructor_name ?(mangle_f=(fun x -> x)) name =
-  "`" ^ (mangle_f name |> String.capitalize_ascii)
+let escape_reserved name =
+  match is_reserved name with
+  | true -> name ^ "'"
+  | false -> name
+
