@@ -154,8 +154,10 @@ let add_fd t (fd : FileDescriptorProto.t) =
 
 let name kind segs =
   match kind with
-  | Field | ExtensionField ->
+  | Field ->
     Names.escape_reserved (List.hd segs)
+  | ExtensionField ->
+    Names.escape_reserved (List.hd segs) |> String.capitalize_ascii
   | Oneof ->
     (* Generate names of make functions, etc. *)
     List.hd segs
@@ -179,9 +181,7 @@ let rec ocaml_name a t path =
   (* Printf.fprintf Base.debug "ocaml_name: %s | %s\n" *)
   (*   (String.concat ~sep:"." a) (String.concat ~sep:"." (List.rev path)) ; *)
   match path with
-  | [] ->
-    (* TODO: Implement real name based on t. *)
-    name t.kind a
+  | [] -> name t.kind a
   | h :: ts ->
     match List.find_opt t.chs ~f:(fun ch -> String.equal ch.name h) with
     | None -> Format.kasprintf failwith "Cannot find component %s in <%s>" h (String.concat ~sep:"." a)

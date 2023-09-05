@@ -1,15 +1,14 @@
-open Echo
+open Echo_Echo
 open Google_types
 
 let mk_timestamp () =
   let now = Unix.gettimeofday () in
   let seconds = int_of_float now in
   let nanos = ((now -. float seconds) *. 10. ** 12.) |> int_of_float in
-  Timestamp.Google.Protobuf.Timestamp.{ seconds; nanos }
-
+  Timestamp.GoogleProtobufTimestamp.{ seconds; nanos }
 
 let mk_request () =
-  Echo.Request.{ timestamp = `Ts (mk_timestamp ()); what = `Type Echo.Request.Who.World }
+  EchoRequest.{ timestamp = `Ts (mk_timestamp ()); what = `Type EchoRequest.Who.World }
 
 let mk_reply Echo.Request.{ timestamp; what } =
   let at =

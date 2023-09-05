@@ -199,56 +199,61 @@ let rec emit_message ~params ~syntax scope
   in
 
   (* Emit nested types *)
+  let nested_types =
+    List.map ~f:(emit_enum_type ~scope ~params) enum_types
+    @ List.map ~f:(emit_message ~params ~syntax scope) nested_types
+    @ List.map ~f:(emit_extension ~scope ~params) extensions in
+  emit_nested_types ~syntax ~signature ~implementation nested_types ;
 
+  (match name with
+   | None ->
+     Format.fprintf !Base.debug' "emit_message: Empty message (scope = %a)\n" Scope.pp scope ;
+     (* Not sure what happens here. Verify. *)
+     ()
+   | Some msg ->
+     Printf.fprintf !Base.debug "emit_message: %s\n" msg ;
+     let is_map_entry = is_map_entry options in
+     let is_cyclic = Scope.is_cyclic scope in
+     let extension_ranges =
+       extension_ranges
+       |> List.map ~f:(function
+         | DescriptorProto.ExtensionRange.{ start = Some start; end' = Some end'; _ } -> (start, end')
+         | _ -> failwith "Extension ranges must be defined"
+       )
+       |> List.map ~f:(fun (s, e) -> Printf.sprintf "(%d, %d)" s e)
+       |> String.concat ~sep:"; "
+       |> Printf.sprintf "[%s]"
+     in
+     let Types.{ type'; constructor; apply; deserialize_spec; serialize_spec; default_constructor_sig; default_constructor_impl } =
+       Types.make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields oneof_decls
+     in
+     ignore (default_constructor_sig, default_constructor_impl);
+     let open Code in
+     emit signature `None "val name': unit -> string";
+     emit signature `None "type t = %s %s" type' params.annot;
+     emit signature `None "val make : %s" default_constructor_sig;
+     emit signature `None "val to_proto: t -> Runtime'.Writer.t";
+     emit signature `None "val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result";
 
-  List.map ~f:(emit_enum_type ~scope ~params) enum_types
-  @ List.map ~f:(emit_message ~params ~syntax scope) nested_types
-  @ List.map ~f:(emit_extension ~scope ~params) extensions
-  |> emit_nested_types ~syntax ~signature ~implementation;
+     emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
+     emit implementation `None "type t = %s %s" type' params.annot;
+     emit implementation `Begin "let make =";
+     emit implementation `None "%s" default_constructor_impl;
+     emit implementation `End "";
 
-  let is_map_entry = is_map_entry options in
-  let is_cyclic = Scope.is_cyclic scope in
-  let extension_ranges =
-    extension_ranges
-    |> List.map ~f:(function
-      | DescriptorProto.ExtensionRange.{ start = Some start; end' = Some end'; _ } -> (start, end')
-      | _ -> failwith "Extension ranges must be defined"
-    )
-    |> List.map ~f:(fun (s, e) -> Printf.sprintf "(%d, %d)" s e)
-    |> String.concat ~sep:"; "
-    |> Printf.sprintf "[%s]"
-  in
-  let Types.{ type'; constructor; apply; deserialize_spec; serialize_spec; default_constructor_sig; default_constructor_impl } =
-    Types.make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields oneof_decls
-  in
-  ignore (default_constructor_sig, default_constructor_impl);
-  let open Code in
-  (* Emit below only if name above is not None. Can this happen? *)
-  emit signature `None "val name': unit -> string";
-  emit signature `None "type t = %s %s" type' params.annot;
-  emit signature `None "val make : %s" default_constructor_sig;
-  emit signature `None "val to_proto: t -> Runtime'.Writer.t";
-  emit signature `None "val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result";
+     emit implementation `Begin "let to_proto =";
+     emit implementation `None "let apply = %s in" apply;
+     emit implementation `None "let spec = %s in" serialize_spec;
+     emit implementation `None "let serialize = Runtime'.Serialize.serialize %s (spec) in" extension_ranges;
+     emit implementation `None "fun t -> apply ~f:serialize t";
+     emit implementation `End "";
 
-  emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
-  emit implementation `None "type t = %s %s" type' params.annot;
-  emit implementation `Begin "let make =";
-  emit implementation `None "%s" default_constructor_impl;
-  emit implementation `End "";
-
-  emit implementation `Begin "let to_proto =";
-  emit implementation `None "let apply = %s in" apply;
-  emit implementation `None "let spec = %s in" serialize_spec;
-  emit implementation `None "let serialize = Runtime'.Serialize.serialize %s (spec) in" extension_ranges;
-  emit implementation `None "fun t -> apply ~f:serialize t";
-  emit implementation `End "";
-
-  emit implementation `Begin "let from_proto =";
-  emit implementation `None "let constructor = %s in" constructor;
-  emit implementation `None "let spec = %s in" deserialize_spec;
-  emit implementation `None "let deserialize = Runtime'.Deserialize.deserialize %s spec constructor in" extension_ranges;
-  emit implementation `None "fun writer -> deserialize writer |> Runtime'.Result.open_error";
-  emit implementation `End "";
+     emit implementation `Begin "let from_proto =";
+     emit implementation `None "let constructor = %s in" constructor;
+     emit implementation `None "let spec = %s in" deserialize_spec;
+     emit implementation `None "let deserialize = Runtime'.Deserialize.deserialize %s spec constructor in" extension_ranges;
+     emit implementation `None "fun writer -> deserialize writer |> Runtime'.Result.open_error";
+     emit implementation `End "" ) ;
   {module_name; signature; implementation}
 
 let append_impl ~params ~syntax scope message_type services =
@@ -279,13 +284,31 @@ let emit_banner impl (params:Parameters.t) name syntax =
   emit impl `None "    singleton_record=%b" params.singleton_record;
   emit impl `None "*)"
 
+let tidy =
+   String.map ~f:(function '-' -> '_' | c -> c)
+
+let file_name ?package name =
+  let name =
+   tidy name |> Filename.remove_extension in
+  let name =
+  match package with
+  | None -> name
+  | Some pkg ->
+    let pkg = String.split_on_char ~sep:'.' pkg in
+    let pkg = String.concat ~sep:"" (List.map pkg ~f:String.capitalize_ascii) in
+    pkg ^ "_" ^ String.capitalize_ascii name in
+  name ^ ".ml"
+
+(* Name is the file path starting from proto paths given to protoc.  *)
 let parse_proto_file ~params scope
-    FileDescriptorProto.{ name; package=_; dependency = _; public_dependency = _;
+    FileDescriptorProto.{ name; package; dependency = _; public_dependency = _;
                           weak_dependency = _; message_type = message_types;
                           enum_type = enum_types; service = services; extension;
                           options = _; source_code_info = _; syntax; }
   =
   let name = Option.get name in
+  let fn = file_name ?package name in
+  Printf.fprintf !Base.debug "parse_proto_file: name = %s, file_name = %s\n" name fn ;
 
   let syntax = match syntax with
     | None | Some "proto2" -> `Proto2
@@ -299,13 +322,12 @@ let parse_proto_file ~params scope
   List.iter
     ("Ocaml_protoc_plugin.Runtime" :: params.opens)
     ~f:(emit implementation `None "open %s [@@warning \"-33\"]" ) ;
+
+  (* What is this? Creation of a new but wrapped type WTF? *)
   let message_type =
     DescriptorProto.{name = None; nested_type=message_types; enum_type = enum_types;
                      field = []; extension; extension_range = []; oneof_decl = [];
                      options = None; reserved_range = []; reserved_name = []; }
   in
   append implementation (append_impl ~params ~syntax scope message_type services);
-  let ocaml_name =
-    (String.map name ~f:(function '-' -> '_' | c -> c)
-     |> Filename.remove_extension) ^ ".ml" in
-  ocaml_name, implementation
+  fn, implementation
