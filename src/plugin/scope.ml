@@ -23,10 +23,17 @@ open Spec.Descriptor.Google.Protobuf
 (* Type of a scope.  *)
 type t = {
   name: string; (* Protobuf file name. *)
-  path: string list ; (* package in normal order. Current package we're in??  *)
+  path: string list ; (* package in reverse order. *)
   package_length: int ; (* length of package name *)
   type_db: Type.t
 }
+
+let replace_path t path = { t with path = List.rev path }
+
+let pp ppf t =
+  let open Format in
+  fprintf ppf "file:%s package:%a" t.name (pp_print_list ~pp_sep:(fun ppf () -> pp_print_char ppf '.') pp_print_string) t.path
+
 
 let create FileDescriptorProto.{ name; package; _ } type_db =
   let name = Option.get name in

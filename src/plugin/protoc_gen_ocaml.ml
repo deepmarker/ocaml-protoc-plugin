@@ -21,11 +21,11 @@ let parse_request Plugin.CodeGeneratorRequest.{file_to_generate = files_to_gener
   let params = Parameters.parse (Option.value ~default:"" parameters) in
   if params.debug then (
     List.iter files_to_generate ~f:(fun x ->
-      Format.eprintf "File to generate: %s\n" x) ;
+      Printf.fprintf !Base.debug "### File to generate: %s\n" x) ;
     List.iter proto_files ~f:(fun (x:Descriptor.FileDescriptorProto.t) ->
       let name = Option.get x.name in
       let package = Option.value ~default:"" x.package in
-      Format.eprintf "%s (%s)\n" name package)
+      Printf.fprintf !Base.debug "%s (%s)\n" name package)
     ) ;
   (* Find the correct file to process *)
   let target_proto_files =
@@ -64,4 +64,5 @@ let main () =
 
 let () =
   main ()
-  (* Fun.protect main ~finally:(fun () -> Out_channel.close !Base.debug) *)
+  (* Fun.protect main ~finally:(fun () -> *)
+  (*   Out_channel.close !Base.debug) *)

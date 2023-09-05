@@ -11,3 +11,4 @@ module StringListSet : Set.S with type elt = string list
 module StringListMap : Map.S with type key = string list
 
 val debug : out_channel ref
+val debug' : Format.formatter ref

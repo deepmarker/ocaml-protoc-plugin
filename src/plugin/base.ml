@@ -29,3 +29,5 @@ let debug =
   match debug_mode with
   | true -> ref stderr
   | false -> ref (Out_channel.open_text "/dev/null")
+
+let debug' = ref (Format.formatter_of_out_channel !debug)

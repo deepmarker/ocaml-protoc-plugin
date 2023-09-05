@@ -107,8 +107,11 @@ let emit_extension ~scope ~params (field : FieldDescriptorProto.t) =
   let name = Option.get field.name in
   (* I guess we need to push extendee scope here! *)
   let extendee = Option.get field.extendee in
+  Printf.fprintf !Base.debug "emit_extension: extendee = %s\n" extendee ;
+  (* Somehow the below must have been added somewhere before I did it. But then why was it failing???? *)
+  (* Probably push *)
   let extendee_segs = String.split_on_char extendee ~sep:'.' |> List.tl in
-  let scope = List.fold_left extendee_segs ~init:scope ~f:Scope.push in
+  let scope = Scope.replace_path scope extendee_segs in
   let module_name = Scope.get_name scope name in
   let extendee_type = Scope.get_scoped_name scope ~postfix:"t" extendee in
   let extendee_field = Scope.get_scoped_name scope ~postfix:"extensions'" extendee in
@@ -178,10 +181,18 @@ let rec emit_message ~params ~syntax scope
   let implementation = Code.init () in
 
   let has_extensions = not (extension_ranges = []) in
+
   (* Ignore empty modules *)
   let module_name, scope =
     match name with
-    | None -> "", scope
+    | None ->
+      (* Empty message name. Happens for extend messages.
+         How to infer context then?!
+         I guess from FQN embedded in extended fields?
+      *)
+      (* Format.fprintf !Base.debug' "Empty module name at %a (%d fields, %d extensions)@." *)
+      (*   Scope.pp scope (List.length fields) (List.length extensions); *)
+      "", scope
     | Some name ->
       let module_name = Scope.get_name scope name in
       module_name, Scope.push scope name

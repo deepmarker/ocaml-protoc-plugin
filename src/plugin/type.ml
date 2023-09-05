@@ -76,10 +76,11 @@ let rec add_package ?(extension=false) t pkg k = match pkg with
         | { name; _ } when String.equal name seg ->
           (match x.kind, extension with
            | Package, _ -> ()
+           | Message, _ -> ()
            | _, false ->
              (* Not a package, not extending anything, do not allow
                 package to overload a previously defined thing. *)
-             assert false
+             Format.kasprintf failwith "Trying to erase a %a (%s) with a package segment" pp_kind x.kind name
            | _ -> ());
           (add_package x rest k :: xs, true)
         | _ -> (x::xs, modified)) in
@@ -153,7 +154,7 @@ let add_fd t (fd : FileDescriptorProto.t) =
 
 let name kind segs =
   match kind with
-  | Field ->
+  | Field | ExtensionField ->
     Names.escape_reserved (List.hd segs)
   | Oneof ->
     (* Generate names of make functions, etc. *)
@@ -167,9 +168,11 @@ let name kind segs =
     let segs = List.rev_map segs ~f:String.capitalize_ascii in
     String.concat ~sep:"" segs
   | Package | Extension ->
-    assert false
-  | _ ->
-    failwith "not implemented"
+    (* Check *)
+    let segs = List.rev_map segs ~f:String.capitalize_ascii in
+    String.concat ~sep:"" segs
+  | kind ->
+    Format.kasprintf failwith "not supported %a" pp_kind kind
 
 (* takes the path in reverse order *)
 let rec ocaml_name a t path =

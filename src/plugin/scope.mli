@@ -9,6 +9,10 @@ end
 (** Type of a scope *)
 type t
 
+val replace_path : t -> string list -> t
+
+val pp : Format.formatter -> t -> unit
+
 val create: FileDescriptorProto.t -> Type.t -> t
 
 (** Push an identifier to the current scope *)
