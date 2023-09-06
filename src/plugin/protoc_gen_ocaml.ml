@@ -17,6 +17,22 @@ let write response =
   |> Ocaml_protoc_plugin.Writer.contents
   |> output_string stdout
 
+(* takes raw args from FileDescriptorProto.t *)
+let file_name ?package name =
+  let tidy = String.map ~f:(function '-' -> '_' | c -> c) in
+  let name = Filename.(basename name |> tidy |> remove_extension) in
+  let name =
+  match package with
+  | None -> name
+  | Some pkg ->
+    let pkg = String.split_on_char ~sep:'.' pkg in
+    let pkg = String.concat ~sep:"" (List.map pkg ~f:String.capitalize_ascii) in
+    pkg ^ String.capitalize_ascii name in
+  let ret = name ^ ".ml" in
+  Printf.fprintf !Base.debug "file_name: name %s / package %s / final = %s\n"
+    name (Option.value package ~default:"<nil>") ret ;
+  ret
+
 (* file_to generate: proto files to process, among proto_file available *)
 (* I can decide where to put the code. *)
 let parse_request (x : Plugin.CodeGeneratorRequest.t) =
@@ -37,24 +53,31 @@ let parse_request (x : Plugin.CodeGeneratorRequest.t) =
   in
   let type_db = List.fold_left x.proto_file ~init:Type.empty ~f:(Type.add_fd) in
   (* Debug *)
-  Type.dump type_db !Base.debug ;
+  (* Type.dump type_db !Base.debug ; *)
   (* *)
   List.map target_proto_files ~f:(fun (proto_file : Descriptor.FileDescriptorProto.t) ->
+    (* let _fn = file_name ?package name in *)
+    (* Printf.fprintf !Base.debug "parse_proto_file: name = %s, file_name = %s\n" name fn ; *)
     let scope = Scope.create proto_file type_db in
-    let name, code = Emit.parse_proto_file ~params scope proto_file in
+    let code = Emit.parse_proto_file ~params scope proto_file in
     (* if params.debug then Printf.eprintf "%s\n%!" (Code.contents code); *)
-    Filename.basename name, code
+    (* Here, build the resulting file name. *)
+    let name = Option.get proto_file.name in
+    let fn = file_name ?package:proto_file.package name in
+    fn, code
   )
 
+(* Generate the code *)
 let main () =
+  let open Plugin.CodeGeneratorResponse in
   let request = read () in
   let outputs = parse_request request in
   (* Apparently this can be done several times? *)
   let response_of_output (filename, code) =
-    Plugin.CodeGeneratorResponse.File.make ~name:filename ~content:(Code.contents code) ()
+    File.make ~name:filename ~content:(Code.contents code) ()
   in
   let files = List.map ~f:response_of_output outputs in
-  let response = Plugin.CodeGeneratorResponse.make ~supported_features:1 ~file:files () in
+  let response = make ~supported_features:1 ~file:files () in
   write response
 
 let main () =

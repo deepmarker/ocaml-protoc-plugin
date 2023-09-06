@@ -11,8 +11,18 @@
           (run pkg-config protobuf --variable=includedir))))
 
 (rule
- (targets any.ml api.ml descriptor.ml duration.ml empty.ml field_mask.ml
-          source_context.ml struct.ml timestamp.ml type.ml wrappers.ml)
+ (targets
+   GoogleProtobufAny.ml
+   GoogleProtobufApi.ml
+   GoogleProtobufDescriptor.ml
+   GoogleProtobufDuration.ml
+   GoogleProtobufEmpty.ml
+   GoogleProtobufField_mask.ml
+   GoogleProtobufSource_context.ml
+   GoogleProtobufStruct.ml
+   GoogleProtobufTimestamp.ml
+   GoogleProtobufType.ml
+   GoogleProtobufWrappers.ml)
  (deps
   (:plugin ../plugin/protoc_gen_ocaml.exe))
  (action

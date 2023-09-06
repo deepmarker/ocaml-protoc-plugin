@@ -13,8 +13,18 @@
 
 (rule
  (deps (package ocaml-protoc-plugin))
- (targets any.ml api.ml descriptor.ml duration.ml empty.ml field_mask.ml
-          source_context.ml struct.ml timestamp.ml type.ml wrappers.ml)
+ (targets
+   GoogleProtobufAny.ml
+   GoogleProtobufApi.ml
+   GoogleProtobufDescriptor.ml
+   GoogleProtobufDuration.ml
+   GoogleProtobufEmpty.ml
+   GoogleProtobufField_mask.ml
+   GoogleProtobufSource_context.ml
+   GoogleProtobufStruct.ml
+   GoogleProtobufTimestamp.ml
+   GoogleProtobufType.ml
+   GoogleProtobufWrappers.ml)
  (action
   (run protoc -I %{read-lines:google_include}
        "--ocaml_out=annot=[@@deriving show { with_path = false }, eq, ord]:."

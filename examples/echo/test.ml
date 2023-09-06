@@ -1,16 +1,16 @@
-open Echo_Echo
-open Google_types
+open EchoEcho
+open Google_types.GoogleProtobufTimestamp
 
 let mk_timestamp () =
   let now = Unix.gettimeofday () in
   let seconds = int_of_float now in
   let nanos = ((now -. float seconds) *. 10. ** 12.) |> int_of_float in
-  Timestamp.GoogleProtobufTimestamp.{ seconds; nanos }
+  Timestamp.{ seconds; nanos }
 
 let mk_request () =
-  EchoRequest.{ timestamp = `Ts (mk_timestamp ()); what = `Type EchoRequest.Who.World }
+  Request.{ timestamp = `Ts (mk_timestamp ()); what = `Type Request.Who.World }
 
-let mk_reply Echo.Request.{ timestamp; what } =
+let mk_reply Request.{ timestamp; what } =
   let at =
     match timestamp with
       | `Ts {seconds; nanos = _} ->
@@ -23,12 +23,12 @@ let mk_reply Echo.Request.{ timestamp; what } =
 
   match what with
     | `Someone person -> Printf.sprintf "%s Hello there, %s" at person
-    | `Type Echo.Request.Who.Mum -> Printf.sprintf "%s Hi Mom" at
-    | `Type Echo.Request.Who.World -> Printf.sprintf "%s Hello World" at
+    | `Type Request.Who.Mum -> Printf.sprintf "%s Hi Mom" at
+    | `Type Request.Who.World -> Printf.sprintf "%s Hello World" at
     | `not_set -> Printf.sprintf "Hello Unknown"
 
 let handle_request proto_request =
-  let (decode, encode) = Ocaml_protoc_plugin.Service.make_service_functions Echo.Echo.call in
+  let (decode, encode) = Ocaml_protoc_plugin.Service.make_service_functions Echo.call in
   let request =
     Ocaml_protoc_plugin.Reader.create proto_request
     |> decode
@@ -39,7 +39,7 @@ let handle_request proto_request =
   |> Ocaml_protoc_plugin.Writer.contents
 
 let do_request ~handler request =
-  let (encode, decode) = Ocaml_protoc_plugin.Service.make_client_functions Echo.Echo.call in
+  let (encode, decode) = Ocaml_protoc_plugin.Service.make_client_functions Echo.call in
   let proto_request = encode request |> Ocaml_protoc_plugin.Writer.contents in
   let proto_reply = handler proto_request in
   Ocaml_protoc_plugin.Reader.create proto_reply

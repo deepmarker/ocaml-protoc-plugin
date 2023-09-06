@@ -143,9 +143,9 @@ let is_map_entry = function
   | _ -> false
 
 (** Emit the nested types. *)
-let emit_sub dest ~is_implementation ~is_first {module_name; signature; implementation} =
+let emit_sub dest ~is_implementation ~first {module_name; signature; implementation} =
   let () =
-    match is_first with
+    match first with
     | true -> Code.emit dest `Begin "module rec %s : sig" module_name
     | false -> Code.emit dest `Begin "and %s : sig" module_name
   in
@@ -160,13 +160,14 @@ let emit_sub dest ~is_implementation ~is_first {module_name; signature; implemen
   Code.emit dest `End "end";
   ()
 
-let rec emit_nested_types ~syntax ~signature ~implementation ?(is_first = true) nested_types =
-  match nested_types with
+let emit_nested_types ~signature ~implementation nested_types =
+  let rec inner first = function
   | [] -> ()
   | sub :: subs ->
-    emit_sub ~is_implementation:false signature ~is_first sub;
-    emit_sub ~is_implementation:true implementation ~is_first sub;
-    emit_nested_types ~syntax ~signature ~implementation ~is_first:false subs
+    emit_sub ~is_implementation:false signature ~first sub;
+    emit_sub ~is_implementation:true implementation ~first sub;
+    inner false subs in
+  inner true nested_types
 
 (* Emit a message plus all its subtypes.
    Why is this not being called recursively, but rather calling sub functions which never returns
@@ -203,15 +204,15 @@ let rec emit_message ~params ~syntax scope
     List.map ~f:(emit_enum_type ~scope ~params) enum_types
     @ List.map ~f:(emit_message ~params ~syntax scope) nested_types
     @ List.map ~f:(emit_extension ~scope ~params) extensions in
-  emit_nested_types ~syntax ~signature ~implementation nested_types ;
+  emit_nested_types ~signature ~implementation nested_types ;
 
   (match name with
    | None ->
-     Format.fprintf !Base.debug' "emit_message: Empty message (scope = %a)\n" Scope.pp scope ;
+     (* Format.fprintf !Base.debug' "emit_message: Empty message (scope = %a)\n" Scope.pp scope ; *)
      (* Not sure what happens here. Verify. *)
      ()
-   | Some msg ->
-     Printf.fprintf !Base.debug "emit_message: %s\n" msg ;
+   | Some _msg ->
+     (* Printf.fprintf !Base.debug "emit_message: %s\n" msg ; *)
      let is_map_entry = is_map_entry options in
      let is_cyclic = Scope.is_cyclic scope in
      let extension_ranges =
@@ -284,32 +285,15 @@ let emit_banner impl (params:Parameters.t) name syntax =
   emit impl `None "    singleton_record=%b" params.singleton_record;
   emit impl `None "*)"
 
-let tidy =
-   String.map ~f:(function '-' -> '_' | c -> c)
-
-let file_name ?package name =
-  let name =
-   tidy name |> Filename.remove_extension in
-  let name =
-  match package with
-  | None -> name
-  | Some pkg ->
-    let pkg = String.split_on_char ~sep:'.' pkg in
-    let pkg = String.concat ~sep:"" (List.map pkg ~f:String.capitalize_ascii) in
-    pkg ^ "_" ^ String.capitalize_ascii name in
-  name ^ ".ml"
-
 (* Name is the file path starting from proto paths given to protoc.  *)
 let parse_proto_file ~params scope
-    FileDescriptorProto.{ name; package; dependency = _; public_dependency = _;
-                          weak_dependency = _; message_type = message_types;
-                          enum_type = enum_types; service = services; extension;
-                          options = _; source_code_info = _; syntax; }
+      FileDescriptorProto.{ name;
+                            message_type = message_types;
+                            enum_type = enum_types;
+                            service = services; extension;
+                            syntax; _ }
   =
   let name = Option.get name in
-  let fn = file_name ?package name in
-  Printf.fprintf !Base.debug "parse_proto_file: name = %s, file_name = %s\n" name fn ;
-
   let syntax = match syntax with
     | None | Some "proto2" -> `Proto2
     | Some "proto3" -> `Proto3
@@ -323,11 +307,11 @@ let parse_proto_file ~params scope
     ("Ocaml_protoc_plugin.Runtime" :: params.opens)
     ~f:(emit implementation `None "open %s [@@warning \"-33\"]" ) ;
 
-  (* What is this? Creation of a new but wrapped type WTF? *)
+  (* A proto file has several messages that are all wrapped together here! *)
   let message_type =
     DescriptorProto.{name = None; nested_type=message_types; enum_type = enum_types;
                      field = []; extension; extension_range = []; oneof_decl = [];
                      options = None; reserved_range = []; reserved_name = []; }
   in
   append implementation (append_impl ~params ~syntax scope message_type services);
-  fn, implementation
+  implementation

@@ -9,7 +9,7 @@
           (system "pkg-config protobuf --variable=includedir"))))
 
 (rule
- (targets Echo_Echo.ml)
+ (targets EchoEcho.ml)
  (deps
   (:proto echo.proto) (package ocaml-protoc-plugin))
  (action

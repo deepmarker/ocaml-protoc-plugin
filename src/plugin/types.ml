@@ -6,7 +6,7 @@ open Printf
    in the spec module.
 
    This will ensure that the plugin will only construct valid types,
-   so that chnges to the spec will require changes here also.
+   so that changes to the spec will require changes here also.
 *)
 
 module T = Ocaml_protoc_plugin.Spec.Make(struct
@@ -28,6 +28,7 @@ type type_modifier =
 type type' =
   { name: string; modifier: type_modifier }
 
+(* ??? *)
 type c = {
   name : string;
   type' : type';
@@ -187,33 +188,11 @@ let string_of_spec: type a. [`Deserialize | `Serialize] -> a spec -> string = fu
   | `Serialize,   Message (_, _,    ser, _) -> sprintf "(message (fun t -> %s t))" ser
 
 let type_of_spec: type a. a spec -> string = function
-  | Double -> "float"
-  | Float -> "float"
-
-  | Int32 -> "int32"
-  | UInt32 -> "int32"
-  | SInt32 -> "int32"
-  | Fixed32 -> "int32"
-  | SFixed32 -> "int32"
-
-  | Int32_int -> "int"
-  | UInt32_int -> "int"
-  | SInt32_int -> "int"
-  | Fixed32_int -> "int"
-  | SFixed32_int -> "int"
-
-  | UInt64 -> "int64"
-  | Int64 -> "int64"
-  | SInt64 -> "int64"
-  | Fixed64 -> "int64"
-  | SFixed64 -> "int64"
-
-  | UInt64_int -> "int"
-  | Int64_int -> "int"
-  | SInt64_int -> "int"
-  | Fixed64_int -> "int"
-  | SFixed64_int -> "int"
-
+  | Double | Float -> "float"
+  | Int32 | UInt32 | SInt32 | Fixed32 | SFixed32 -> "int32"
+  | Int32_int | UInt32_int | SInt32_int | Fixed32_int | SFixed32_int
+  | UInt64_int | Int64_int | SInt64_int | Fixed64_int | SFixed64_int -> "int"
+  | UInt64 | Int64 | SInt64 | Fixed64 | SFixed64 -> "int64"
   | Bool -> "bool"
   | String -> "string"
   | Bytes -> "bytes"

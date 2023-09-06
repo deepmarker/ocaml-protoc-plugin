@@ -5,68 +5,6 @@ include Type_intf
 
 let package file name = { file; name; chs = []; kind = Package }
 
-(* let of_service ServiceDescriptorProto.{ name; method' = methods; _ } = *)
-(*   let name = Option.get name in *)
-(*   let meths = *)
-(*     List.map ~f:(fun MethodDescriptorProto.{ name; _ } -> Option.get name) methods *)
-(*   in *)
-(*   service name meths *)
-
-(* let of_extension FieldDescriptorProto.{ name; _ } = extension (Option.get name) *)
-
-(* let split_oneof_fields fields = *)
-(*   let rec group acc ~eq = function *)
-(*     | [] when acc = [] -> [] *)
-(*     | [] -> [ List.rev acc ] *)
-(*     | x1 :: (x2 :: _  as xs) when eq x1 x2 -> group (x1 :: acc) ~eq xs *)
-(*     | x :: xs -> (List.rev (x :: acc)) :: group [] ~eq xs *)
-(*   in *)
-(*   let field_number_of_field = function *)
-(*     | FieldDescriptorProto.{ oneof_index = None; _ } -> failwith "Only oneof fields here" *)
-(*     | FieldDescriptorProto.{ oneof_index = Some number; _ } -> number *)
-(*   in *)
-
-(*   let fields = List.sort ~cmp:(fun a b -> compare (field_number_of_field a) (field_number_of_field b)) fields in *)
-(*   group [] ~eq:(fun a b -> field_number_of_field a = field_number_of_field b) fields *)
-
-(* let rec of_message DescriptorProto.{ name; field = fields; *)
-(*                                      nested_type = nested_types; *)
-(*                                      enum_type ; *)
-(*                                      oneof_decl = oneof_decls; _} = *)
-(*   let name = Option.get name in *)
-(*   (\* Fields can be messages or enums... ok... *\) *)
-(*   let depends = *)
-(*     List.fold_left fields ~init:[] ~f:(fun acc -> function *)
-(*       | FieldDescriptorProto.{ type_name = Some type_name; type' = Some Type.TYPE_MESSAGE; _ } -> *)
-(*         type_name :: acc *)
-(*       | FieldDescriptorProto.{ type_name = Some type_name; type' = Some Type.TYPE_ENUM; _ } -> *)
-(*         type_name :: acc *)
-(*       | _ -> acc) in *)
-(*   (\* Inner types can be enums too! *\) *)
-(*   let nested_types = List.map nested_types ~f:of_message in *)
-(*   let enum_types = List.map enum_type ~f:of_enum in *)
-(*   let nested = List.sort ~cmp:compare (List.rev_append enum_types nested_types) in *)
-
-(*   let field_name FieldDescriptorProto.{ name; _} = *)
-(*     Option.get name *)
-(*   in *)
-(*   let (plain_fields, oneof_fields) = *)
-(*     List.partition *)
-(*       ~f:(function FieldDescriptorProto.{ proto3_optional = Some true; _ } -> true *)
-(*                  | { oneof_index = None; _ } -> true *)
-(*                  | _ -> false) fields in *)
-(*   let plain_fields = *)
-(*     let acc = List.map ~f:field_name plain_fields in *)
-(*     List.fold_left ~init:acc ~f:(fun acc OneofDescriptorProto.{ name; _ } -> *)
-(*       (Option.get name) :: acc *)
-(*     ) oneof_decls *)
-(*   in *)
-(*   let oneof_fields = *)
-(*     split_oneof_fields oneof_fields *)
-(*     |> List.map ~f:(List.map ~f:field_name) *)
-(*   in *)
-(*   { name; kind = Message { Type_intf.nested; depends; plain_fields; oneof_fields } } *)
-
 let rec add_package ?(extension=false) t pkg k = match pkg with
   | [] -> k t
   | seg :: rest ->
@@ -123,13 +61,14 @@ let of_extension_field file (x: FieldDescriptorProto.t) =
   (* FQN of extendee I guess! Just register it as an extendee field. *)
   (* FQN is prefixed by dot to denote absolute path. *)
   let extendee = Option.get x.extendee in
-  Printf.fprintf !Base.debug "extendee: %s\n" extendee ;
+  (* Printf.fprintf !Base.debug "extendee: %s\n" extendee ; *)
   let extendee = String.split_on_char ~sep:'.' extendee |> List.tl in
   extendee, extension_field file (Option.get x.name)
 
 let add_fd t (fd : FileDescriptorProto.t) =
+  (* File is the proto file path relative to the proto_path directory. *)
   let file = Option.get fd.name in
-  Printf.fprintf !Base.debug "# Adding FD %s\n" file ;
+  (* Printf.fprintf !Base.debug "# Adding FD %s\n" file ; *)
   let package = Option.fold fd.package ~none:[] ~some:(String.split_on_char ~sep:'.') in
   let t =
   add_package t package (fun t ->
@@ -167,8 +106,9 @@ let name kind segs =
   | EnumValue ->
     List.hd segs
   | Message | Enum | Service ->
-    let segs = List.rev_map segs ~f:String.capitalize_ascii in
-    String.concat ~sep:"" segs
+    List.hd segs |> String.capitalize_ascii
+    (* let segs = List.rev_map segs ~f:String.capitalize_ascii in *)
+    (* String.concat ~sep:"" segs *)
   | Package | Extension ->
     (* Check *)
     let segs = List.rev_map segs ~f:String.capitalize_ascii in
@@ -199,6 +139,23 @@ let rec file_name a t path =
     file_name (h::a) v ts
 
 let file_name t path = file_name [] t (List.rev path)
+
+(* takes the path in reverse order *)
+let rec package a t path =
+  match path with
+  | [] -> List.rev a
+  | h :: ts ->
+    match List.find_opt t.chs ~f:(fun ch -> String.equal ch.name h) with
+    | None -> Format.kasprintf failwith "Cannot find component %s in <%s>" h (String.concat ~sep:"." a)
+    | Some v ->
+      match v.kind with
+      | Package ->
+        package (h::a) v ts
+      | _ ->
+        package a v ts
+
+
+let package t path = package [] t (List.rev path)
 
 (* total number of nodes (including the root) *)
 let rec length t =

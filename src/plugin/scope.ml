@@ -62,8 +62,12 @@ let get_scoped_name ?postfix t proto_name =
       (* Local name *)
       ocaml_name
     | false ->
-      (* Remote name, prefix with file *)
-      Filename.(basename file_name|> chop_extension |> String.capitalize_ascii) ^ "." ^ ocaml_name
+      (* Remote name is composed of package plus basename of proto
+         file name, concatened+capitalized *)
+      let file = Filename.(basename file_name |> chop_extension |> String.capitalize_ascii) in
+      let prefix = Type.package t.type_db name @ [file] |> List.map ~f:String.capitalize_ascii in
+      let prefix = String.concat prefix ~sep:"" in
+      prefix ^ "." ^ ocaml_name
   in
   Option.fold postfix ~none:type_name ~some:(fun postfix -> type_name ^ "." ^ postfix)
 

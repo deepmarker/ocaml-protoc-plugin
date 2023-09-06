@@ -35,11 +35,33 @@
 
 (rule
  (targets
-   basic.ml primitive_types.ml int_types.ml repeated.ml enum.ml
-   message.ml oneof.ml map.ml package.ml include.ml included.ml
-   included2.ml included3_dash.ml service.ml recursive.ml protocol.ml name_clash.ml
-   name_clash_mangle.ml proto2.ml packed.ml mangle_names.ml extensions.ml
-   options.ml name_clash2.ml empty.ml service_rpc_clash.ml service_empty_package.ml)
+   ProtocPluginTestBasic.ml
+   Primitive_typesPrimitive_types.ml
+   Int_typesInt_types.ml
+   RepeatedRepeated.ml
+   Enum_testEnum.ml
+   MessageMessage.ml
+   OneofOneof.ml
+   MapMap.ml
+   PackageABPackage.ml
+   IncludeInclude.ml
+   IncludeIncluded.ml
+   Included2Included2.ml
+   IncludeIncluded3_dash.ml
+   ServiceP1P2P3Service.ml
+   RecursiveRecursive.ml
+   ProtocolProtocol.ml
+   Name_clashName_clash.ml
+   NameClashMangleName_clash_mangle.ml
+   Proto2Proto2.ml
+   PackedPacked.ml
+   mangle_names.ml
+   ExtensionsExtensions.ml
+   options.ml
+   ImportModuleNameSubPackageNameName_clash2.ml
+   empty.ml
+   ServiceRpcClashService_rpc_clash.ml
+   service_empty_package.ml)
  (deps
   (:plugin ../src/plugin/protoc_gen_ocaml.exe)
   (:proto
@@ -56,7 +78,7 @@
        "--ocaml_out=debug;open=Google_types;annot=[@@deriving show { with_path = false }, eq]:." %{proto})))
 
 (rule
- (targets int_types_native.ml int_types_native_proto2.ml)
+ (targets Int_types_nativeInt_types_native.ml Int_types_native_proto2Int_types_native_proto2.ml)
  (deps
   (:plugin ../src/plugin/protoc_gen_ocaml.exe)
   (:proto int_types_native.proto int_types_native_proto2.proto))
@@ -66,7 +88,7 @@
        "--ocaml_out=debug;open=Google_types;int32_as_int=false;int64_as_int=false;annot=[@@deriving show { with_path = false }, eq]:." %{proto})))
 
 (rule
- (targets singleton_record.ml oneof2.ml)
+ (targets Singleton_recordSingleton_record.ml OneofOneof2.ml)
  (deps
   (:plugin ../src/plugin/protoc_gen_ocaml.exe)
   (:proto singleton_record.proto oneof2.proto))
@@ -77,7 +99,7 @@
 
 (rule
  (enabled_if (<> %{read:config/support_proto3_optional.conf} ""))
- (target proto3_optional.ml)
+ (target Proto3_optionalProto3_optional.ml)
  (deps
   (:plugin ../src/plugin/protoc_gen_ocaml.exe)
   (:proto proto3_optional.proto)
