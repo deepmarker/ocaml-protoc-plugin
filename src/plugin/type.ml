@@ -96,7 +96,8 @@ let name kind segs =
   | Field ->
     Names.escape_reserved (List.hd segs)
   | ExtensionField ->
-    Names.escape_reserved (List.hd segs) |> String.capitalize_ascii
+    (* Check that name is available!! *)
+    "Extended__" ^  List.hd (segs)
   | Oneof ->
     (* Generate names of make functions, etc. *)
     List.hd segs

@@ -107,11 +107,12 @@ let emit_extension ~scope ~params (field : FieldDescriptorProto.t) =
   let name = Option.get field.name in
   (* I guess we need to push extendee scope here! *)
   let extendee = Option.get field.extendee in
-  Printf.fprintf !Base.debug "emit_extension: extendee = %s\n" extendee ;
+  Printf.fprintf !Base.debug "emit_extension: %s (extends %s)\n" name extendee ;
   (* Somehow the below must have been added somewhere before I did it. But then why was it failing???? *)
   (* Probably push *)
   let extendee_segs = String.split_on_char extendee ~sep:'.' |> List.tl in
   let scope = Scope.replace_path scope extendee_segs in
+  (* Module extension name must be modified if it clashes with an already defined module. *)
   let module_name = Scope.get_name scope name in
   let extendee_type = Scope.get_scoped_name scope ~postfix:"t" extendee in
   let extendee_field = Scope.get_scoped_name scope ~postfix:"extensions'" extendee in
@@ -195,6 +196,7 @@ let rec emit_message ~params ~syntax scope
       (*   Scope.pp scope (List.length fields) (List.length extensions); *)
       "", scope
     | Some name ->
+      Printf.fprintf !Base.debug "emit_message: %s\n" name ;
       let module_name = Scope.get_name scope name in
       module_name, Scope.push scope name
   in
@@ -211,8 +213,7 @@ let rec emit_message ~params ~syntax scope
      (* Format.fprintf !Base.debug' "emit_message: Empty message (scope = %a)\n" Scope.pp scope ; *)
      (* Not sure what happens here. Verify. *)
      ()
-   | Some _msg ->
-     (* Printf.fprintf !Base.debug "emit_message: %s\n" msg ; *)
+   | Some _ ->
      let is_map_entry = is_map_entry options in
      let is_cyclic = Scope.is_cyclic scope in
      let extension_ranges =
