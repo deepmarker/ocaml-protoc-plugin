@@ -23,6 +23,7 @@
  (enabled_if (and (<> %{architecture} x86_32) (<> %{architecture} arm32)))
  (libraries ocaml_protoc_plugin google_types)
  (inline_tests)
+ (flags :standard -rectypes)
  (modules :standard \ proto3_optional_test_opt)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq)))

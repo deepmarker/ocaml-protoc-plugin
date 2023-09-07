@@ -1,7 +1,9 @@
 open IncludeInclude
-module Enum = Enum.Enum_test
+module Enum = Enum_testEnum
+module Included = IncludeIncluded
+
 let%expect_test _ =
-  let module T = Include.I in
+  let module T = I in
   let t = T.{ enum = Enum.Message.E.B;
               m = Some 3;
               o = Some Enum.E1.C;
@@ -22,8 +24,8 @@ let%expect_test _ =
 
 
 let%expect_test _ =
-  let module T = Include.Z in
-  let t = Some Included.Include.N.E.B  in
+  let module T = Z in
+  let t = Some Included.N.E.B  in
   Test_lib.test_encode (module T) t;
   [%expect {|
     n {
@@ -31,7 +33,7 @@ let%expect_test _ =
     } |}]
 
 let%expect_test _ =
-  let module T = Include.Y in
+  let module T = Y in
   let t = Some 42 in
   Test_lib.test_encode (module T) t;
   [%expect {|

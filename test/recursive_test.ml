@@ -1,7 +1,7 @@
 module Recursive = RecursiveRecursive
 let%expect_test _ =
   let module T = Recursive.Message in
-  let t = T.{ m = Some T.Message1.{ m1 = Some T.{ m = Some T.Message1.{ m1 = None } } } }  in
+  let t =  Some T.Message1.{ m1 = Some (Some T.Message1.{ m1 = None }) } in
   Test_lib.test_encode (module T) t;
   [%expect {|
     m {
@@ -14,7 +14,7 @@ let%expect_test _ =
 let%expect_test _ =
   let module T1 = Recursive.Mutual1 in
   let module T2 = Recursive.Mutual2 in
-  let t = T1.{ m2 = Some T2.{ m1 = Some T1.{ m2 = Some T2.{ m1 = None }}}} in
+  let t = Some (Some (Some None)) in
   Test_lib.test_encode (module T1) t;
   [%expect {|
     m2 {
