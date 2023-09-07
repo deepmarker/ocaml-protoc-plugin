@@ -3,6 +3,82 @@ open Spec.Descriptor.Google.Protobuf
 
 include Type_intf
 
+(* Original cycle detection algo is:
+   - Only look at messages that have only one children, apparently?
+   - Stop when you don't see anything new anymore?
+*)
+
+(*
+   A message is cyclic if, from exploring a child, one can see the message.
+*)
+
+let pp_path ppf t =
+  Format.pp_print_string ppf (String.concat ~sep:"." t)
+
+let rec find t path =
+  match path with
+  | [] -> t
+  | h :: tl ->
+    let ch = List.find t.chs ~f:(fun ch -> String.equal ch.name h) in
+    find ch tl
+
+(* This will return the set of nodes accessible from path *)
+let accessible_from_path t path =
+  let x = find t path in
+  let tbl = Hashtbl.create 13 in
+  let rec inner x =
+    Hashtbl.add tbl x () ;
+    List.iter x.chs ~f:(fun x ->
+      if not (Hashtbl.mem tbl x) then
+        inner x)
+  in
+  inner x ;
+  (* Format.fprintf !Base.debug' *)
+  (*   "ACCESSIBLE: %d nodes are accesible from %a@." *)
+  (*   (Hashtbl.length tbl) pp_path path ; *)
+  tbl
+
+(* This function is only called of messages! *)
+let rec is_cyclic torig acc (t:t) path =
+  (* Printf.fprintf !Base.debug "is_cyclic %s\n" (String.concat ~sep:"." path); *)
+  match path with
+  | [] ->
+    (* Format.fprintf !Base.debug' "is_cyclic : %a\n" pp_kind t.kind ; *)
+    (match t.kind with
+     | Message ->
+       (* For all children, check if they points to an already seen structure?? *)
+       List.fold_left ~init:false t.chs ~f:(fun a x ->
+         let seen =
+           match x.kind with
+           | Field { type_name = Some x} ->
+             let path = String.split_on_char ~sep:'.' x |> List.tl in
+             let tbl = accessible_from_path torig path in
+             (* If current is accessible from children path, there is a loop. *)
+             let found = Hashtbl.mem tbl t in
+             if found then Format.fprintf !Base.debug'
+               "CYCLE: %d nodes are reachable from %a@."
+               (Hashtbl.length tbl) pp_path path ;
+             found
+           | UnionField { type_name = Some x } ->
+             let path = String.split_on_char ~sep:'.' x |> List.tl in
+             let tbl = accessible_from_path torig path in
+             (* If current is accessible from children path, there is a loop. *)
+             let found = Hashtbl.mem tbl t in
+             if found then
+             Format.fprintf !Base.debug'
+               "CYCLE: %d nodes are reachable from %a@."
+               (Hashtbl.length tbl) pp_path path ;
+             found
+           | _ -> false in
+         a || seen)
+     | _ -> false
+    )
+  | h :: tl ->
+    let ch = List.find t.chs ~f:(fun ch -> String.equal ch.name h) in
+    is_cyclic torig (t::acc) ch tl
+
+let is_cyclic t path = is_cyclic t [] t (List.rev path)
+
 let package file name = { file; name; chs = []; kind = Package }
 
 let rec add_package ?(extension=false) t pkg k = match pkg with
@@ -38,8 +114,8 @@ let of_field file (x : FieldDescriptorProto.t) =
   *)
   match x.oneof_index, x.proto3_optional with
   | None, _
-  | Some _, Some true -> field file (Option.get x.name)
-  | _ -> union file (Option.get x.name)
+  | Some _, Some true -> field file (Option.get x.name) x.type_name
+  | _ -> union file (Option.get x.name) x.type_name
 
 (* Add one oneof *)
 let of_oneof file (x : OneofDescriptorProto.t) =
@@ -119,7 +195,7 @@ let uncapitalize s =
 
 let name kind segs =
   match kind with
-  | Field ->
+  | Field _ ->
     (* Fields can be any case, protobuf does not restrict that
        apparently? Can be at least capitalized! *)
     List.hd segs |> uncapitalize |> Names.escape_reserved
@@ -129,7 +205,7 @@ let name kind segs =
   | Oneof ->
     (* Generate names of make functions, etc. *)
     List.hd segs |> uncapitalize
-  | UnionField ->
+  | UnionField _ ->
     (* Polyvariants MUST be capitalized, even if people do not respect that. *)
     "`" ^ String.capitalize_ascii (List.hd segs)
   | EnumValue ->
@@ -194,8 +270,6 @@ let package t path = package [] t (List.rev path)
 (* total number of nodes (including the root) *)
 let rec length t =
   List.fold_left t.chs ~init:1 ~f:(fun a x -> a + length x)
-
-let is_cyclic _t _path = false
 
 let dump_one oc pfx { file; name; kind; _ } =
   let fqn = name :: pfx |> List.rev |> String.concat ~sep:"." in

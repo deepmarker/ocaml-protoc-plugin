@@ -218,6 +218,7 @@ let rec emit_message ~params ~syntax scope
    | Some _ ->
      let is_map_entry = is_map_entry options in
      let is_cyclic = Scope.is_cyclic scope in
+     if is_cyclic then Format.fprintf !Base.debug' "%a is cyclic@." Scope.pp scope ;
      let extension_ranges =
        extension_ranges
        |> List.map ~f:(function
