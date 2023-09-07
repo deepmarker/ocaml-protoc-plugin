@@ -91,35 +91,68 @@ let add_fd t (fd : FileDescriptorProto.t) =
     add_package ~extension:true a pkg (fun t ->
       { t with chs = (ext :: t.chs) }))
 
+let pathologic = ['_']
+
+exception Starts_at of int
+
+let first_non_pathologic s =
+  try
+    String.iteri s ~f:(fun i c ->
+      if not (List.mem ~set:pathologic c) then raise (Starts_at i));
+    String.length s
+  with Starts_at i -> i
+
+let strip_and_capitalize name =
+  let pos = first_non_pathologic name in
+  let len = String.length name - pos in
+  let name = String.sub name ~pos ~len in
+  let capitalized = Char.(equal name.[0] (uppercase_ascii name.[0])) in
+  String.capitalize_ascii name ^ String.make ( pos + if capitalized then 0 else 1) '_'
+
+let uncapitalize s =
+  let capitalized = Char.(equal s.[0] (uppercase_ascii s.[0])) in
+  let underscore_last = Char.equal s.[String.length s - 1] '_' in
+  let score = List.fold_left ~init:0
+                ~f:(fun a x -> if x then succ a else a) [capitalized; underscore_last] in
+  let trailing = String.make score '_' in
+  String.uncapitalize_ascii s ^  trailing
+
 let name kind segs =
   match kind with
   | Field ->
-    Names.escape_reserved (List.hd segs)
+    (* Fields can be any case, protobuf does not restrict that
+       apparently? Can be at least capitalized! *)
+    List.hd segs |> uncapitalize |> Names.escape_reserved
   | ExtensionField ->
     (* Check that name is available!! *)
     "Extended__" ^  List.hd (segs)
   | Oneof ->
     (* Generate names of make functions, etc. *)
-    List.hd segs
+    List.hd segs |> uncapitalize
   | UnionField ->
     (* Polyvariants MUST be capitalized, even if people do not respect that. *)
     "`" ^ String.capitalize_ascii (List.hd segs)
   | EnumValue ->
-    List.hd segs
-  | Message | Enum | Service ->
+    (* Needs to be capitalized in OCaml, protobuf allow lowercase
+       enums apparently. *)
     List.hd segs |> String.capitalize_ascii
-    (* let segs = List.rev_map segs ~f:String.capitalize_ascii in *)
-    (* String.concat ~sep:"" segs *)
+  | Message | Enum | Service ->
+    (* Need to strip possible pathologic first characters. *)
+    strip_and_capitalize (List.hd segs)
+
+  (* This case is different and returns concatened all segs and not just hd... why?? *)
   | Package | Extension ->
-    (* Check *)
-    let segs = List.rev_map segs ~f:String.capitalize_ascii in
+    (* Check. Remove dashes *)
+    let segs = List.rev_map segs ~f:(fun x ->
+      (* assert (String.index_opt x '-' |> Option.is_none) ; *)
+      String.capitalize_ascii x) in
     String.concat ~sep:"" segs
   | kind ->
     Format.kasprintf failwith "not supported %a" pp_kind kind
 
 (* takes the path in reverse order *)
 let rec ocaml_name a t path =
-  (* Printf.fprintf Base.debug "ocaml_name: %s | %s\n" *)
+  (* Printf.fprintf !Base.debug "ocaml_name: %s | %s\n" *)
   (*   (String.concat ~sep:"." a) (String.concat ~sep:"." (List.rev path)) ; *)
   match path with
   | [] -> name t.kind a

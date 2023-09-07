@@ -8,7 +8,7 @@ let mk_timestamp () =
   Timestamp.{ seconds; nanos }
 
 let mk_request () =
-  Request.{ timestamp = `Ts (mk_timestamp ()); what = `Type Request.Who.World }
+  Request.{ timestamp = `Ts (mk_timestamp ()); what = `Type Request.Who_.World }
 
 let mk_reply Request.{ timestamp; what } =
   let at =
@@ -23,8 +23,8 @@ let mk_reply Request.{ timestamp; what } =
 
   match what with
     | `Someone person -> Printf.sprintf "%s Hello there, %s" at person
-    | `Type Request.Who.Mum -> Printf.sprintf "%s Hi Mom" at
-    | `Type Request.Who.World -> Printf.sprintf "%s Hello World" at
+    | `Type Request.Who_.Mum -> Printf.sprintf "%s Hi Mom" at
+    | `Type Request.Who_.World -> Printf.sprintf "%s Hello World" at
     | `not_set -> Printf.sprintf "Hello Unknown"
 
 let handle_request proto_request =

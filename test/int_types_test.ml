@@ -1,5 +1,5 @@
 open StdLabels
-open Int_types
+module Int_types = Int_typesInt_types
 
 let test_signed (type t) ~(create : int -> t) (module T : Test_lib.T with type t = t) =
   Printf.printf "Test %s\n%!" (T.name' ());

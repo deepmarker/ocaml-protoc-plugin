@@ -13,6 +13,9 @@ val replace_path : t -> string list -> t
 
 val pp : Format.formatter -> t -> unit
 
+(** [create fd db] is a scope for [fd] using type database [db]. If
+    [fd] is namespaced (package not empty), resulting scope takes it
+    into account. *)
 val create: FileDescriptorProto.t -> Type.t -> t
 
 (** Push an identifier to the current scope *)
@@ -24,7 +27,9 @@ val push : t -> string -> t
 (** Get the ocaml name of the given proto type name, based on the current scope *)
 val get_scoped_name : ?postfix:string -> t -> string -> string
 
-(** Get the (absolute?) ocaml name of the given proto type name, based on the current scope *)
+(** Get the (absolute?) ocaml name of the given proto type name, based
+    on the current scope. Need to escape dashes and other unfriendly
+    characters. *)
 val get_name : t -> string -> string
 
 (** Get the ocaml name of the given proto type name, based on the current scope *)

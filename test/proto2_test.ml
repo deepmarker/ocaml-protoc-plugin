@@ -1,6 +1,6 @@
-open Proto2
+open Proto2Proto2
 let%expect_test _ =
-  let module T = Proto2.Message in
+  let module T = Message in
   let t = T.{enum = Some E.B; i = 0; j = 5; required = Some 7; k = Some 5 } in
   Test_lib.test_encode (module T) t;
   [%expect {|

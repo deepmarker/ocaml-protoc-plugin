@@ -1,5 +1,4 @@
-open Service
-module S = Service.P1.P2.P3
+module S = ServiceP1P2P3Service
 let service reader =
   let (s_deser, s_ser) =
     Ocaml_protoc_plugin.Service.make_service_functions S.String_of_int.call

@@ -51,6 +51,7 @@ let module_name ?(mangle_f=(fun x -> x)) name =
   | _ -> String.capitalize_ascii name
 
 let escape_reserved name =
+  (* assert (Option.is_none (String.index_opt name '-')) ; *)
   match is_reserved name with
   | true -> name ^ "'"
   | false -> name

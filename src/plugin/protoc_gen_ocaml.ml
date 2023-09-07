@@ -60,8 +60,7 @@ let parse_request (x : Plugin.CodeGeneratorRequest.t) =
     let fn = file_name ?package:proto_file.package name in
     (* let _fn = file_name ?package name in *)
     (* Printf.fprintf !Base.debug "parse_proto_file: name = %s, file_name = %s\n" name fn ; *)
-    let scope = Scope.create proto_file type_db in
-    let code = Emit.parse_proto_file ~params scope proto_file in
+    let code = Emit.parse_proto_file ~params type_db proto_file in
     (* if params.debug then Printf.eprintf "%s\n%!" (Code.contents code); *)
     (* Here, build the resulting file name. *)
     fn, code

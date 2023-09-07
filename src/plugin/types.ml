@@ -534,6 +534,33 @@ let split_oneof_decl fields oneof_decls =
   in
   inner [] oneof_decls fields
 
+(* What are those functions for?? *)
+
+let type_constr t_as_tuple fields = match fields, t_as_tuple with
+  | [], _ -> "unit"
+  | [field], true -> field
+  | fields, true ->
+    String.concat ~sep:" * " fields
+    |> sprintf "(%s)"
+  | fields, false ->
+    String.concat ~sep:"; " fields
+    |> sprintf "{ %s }"
+
+let type_destr t_as_tuple fields = match fields, t_as_tuple with
+  | [], _ -> "()"
+  | [field], true -> field
+  | fields, true ->
+    String.concat ~sep:", " fields
+    |> sprintf "(%s)"
+  | fields, false ->
+    String.concat ~sep:"; " fields
+    |> sprintf "{ %s }"
+
+let typestr_of_type = function
+  | { name; modifier = (No_modifier _ | Required); _ } -> name
+  | { name; modifier = List; _ } -> sprintf "%s list" name
+  | { name; modifier = Optional; _ } -> sprintf "%s option" name
+
 let make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields oneof_decls =
   let ts =
     split_oneof_decl fields oneof_decls
@@ -542,11 +569,6 @@ let make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields
         | `Field field -> c_of_field ~params ~syntax ~scope field
         | `Oneof (decl, fields) -> c_of_oneof ~params ~syntax ~scope decl fields
       )
-  in
-  let typestr_of_type = function
-    | { name; modifier = (No_modifier _ | Required); _ } -> name
-    | { name; modifier = List; _ } -> sprintf "%s list" name
-    | { name; modifier = Optional; _ } -> sprintf "%s option" name
   in
 
   let constructor_sig_arg = function
@@ -585,27 +607,8 @@ let make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields
                    (List.length ts = 1 && params.singleton_record = false && not has_extensions && not is_cyclic)
   in
   (* Or actually a single constr *)
-  let type_constr fields = match fields, t_as_tuple with
-    | [], _ -> "unit"
-    | [field], true -> field
-    | fields, true ->
-      String.concat ~sep:" * " fields
-      |> sprintf "(%s)"
-    | fields, false ->
-      String.concat ~sep:"; " fields
-      |> sprintf "{ %s }"
-  in
-  let type_destr fields = match fields, t_as_tuple with
-    | [], _ -> "()"
-    | [field], true -> field
-    | fields, true ->
-      String.concat ~sep:", " fields
-      |> sprintf "(%s)"
-    | fields, false ->
-      String.concat ~sep:"; " fields
-      |> sprintf "{ %s }"
-  in
 
+  (* Where types are printed. *)
   let type' =
     List.rev_map ~f:(fun { name; type'; _} -> ((Scope.get_name scope name), (typestr_of_type type'))) ts
     |> prepend ~cond:has_extensions ("extensions'", "Runtime'.Extensions.t")
@@ -613,7 +616,7 @@ let make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields
       | (_, type') when t_as_tuple -> type'
       | (name, type') -> sprintf "%s: %s" name type'
     )
-    |> type_constr
+    |> type_constr t_as_tuple
   in
   (* When deserializing, we expect extensions as the last argument *)
   (* When serializing, its the first argument *)
@@ -625,11 +628,11 @@ let make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields
   let fields =(append ~cond:has_extensions "extensions'" field_names) in
   let constructor =
     sprintf "fun %s %s -> %s"
-      (if has_extensions then "extensions'" else "_extensions") args (type_destr fields)
+      (if has_extensions then "extensions'" else "_extensions") args (type_destr t_as_tuple fields)
   in
   let apply =
     sprintf "fun ~f:f' %s -> f' %s %s"
-      (type_destr fields) (if has_extensions then "extensions'" else "[]") args
+      (type_destr t_as_tuple fields) (if has_extensions then "extensions'" else "[]") args
   in
 
   let default_constructor_sig =
@@ -656,7 +659,7 @@ let make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields
     let constructor =
       List.map ~f:(fun {name; _} -> sprintf "%s" (Scope.get_name scope name)) ts
       |> append ~cond:has_extensions "extensions'"
-      |> type_destr
+      |> type_destr t_as_tuple
     in
     sprintf "fun %s () -> \n%s\n%s" args mappings constructor
   in

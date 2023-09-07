@@ -1,4 +1,4 @@
-open Recursive
+module Recursive = RecursiveRecursive
 let%expect_test _ =
   let module T = Recursive.Message in
   let t = T.{ m = Some T.Message1.{ m1 = Some T.{ m = Some T.Message1.{ m1 = None } } } }  in

@@ -1,6 +1,6 @@
-open Primitive_types
+open Primitive_typesPrimitive_types
 let%expect_test _ =
-  let module T = Primitive_types.Types in
+  let module T = Types in
   let t =
     T.
       {
@@ -41,7 +41,7 @@ let%expect_test _ =
     bytes: "bytes" |}]
 
 let%expect_test _ =
-  let module T = Primitive_types.Types in
+  let module T = Types in
   let t =
     T.
       {
@@ -68,7 +68,7 @@ let%expect_test _ =
 
 
 let%expect_test _ =
-  let module T = Primitive_types.Empty in
+  let module T = Empty in
   let t = () in
   Test_lib.test_encode (module T) t;
   [%expect {| |}]

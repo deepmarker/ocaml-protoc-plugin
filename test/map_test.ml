@@ -1,4 +1,4 @@
-open Map
+module Map = MapMap
 let%expect_test _ =
   let module T = Map.Test in
   let t = [ 1, "1"; 2, "2"; 3, "3" ] in
@@ -19,7 +19,7 @@ let%expect_test _ =
 
 
 let%expect_test _ =
-  let module T = Map.Two in
+  let module T = Two in
   let t = T.{ m = [ 1, "1"; 2, "2"; 3, "3" ];
               n = [ 1, 1.0; 2, 2.0; 3, 3.0 ]} in
   Test_lib.test_encode (module T) t;

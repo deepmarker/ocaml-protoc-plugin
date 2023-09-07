@@ -1,4 +1,4 @@
-open Message
+module Message =  MessageMessage
 let%expect_test _ =
   let module T = Message.Message in
   let submessage = 3 in

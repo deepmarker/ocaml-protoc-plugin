@@ -99,7 +99,9 @@ let emit_service_type scope ServiceDescriptorProto.{ name; method' = methods; _ 
   Code.emit t `Begin "module %s = struct" (Scope.get_name scope name);
   let local_scope = Scope.Local.create () in
 
-  List.iter methods ~f:(emit_method t local_scope (Scope.push scope name) name) ;
+  (* Push name in scope! *)
+  let scope = Scope.push scope name in
+  List.iter methods ~f:(emit_method t local_scope scope name) ;
   Code.emit t `End "end";
   t
 
@@ -231,12 +233,15 @@ let rec emit_message ~params ~syntax scope
      in
      ignore (default_constructor_sig, default_constructor_impl);
      let open Code in
+
+     (* Emit signature *)
      emit signature `None "val name': unit -> string";
      emit signature `None "type t = %s %s" type' params.annot;
      emit signature `None "val make : %s" default_constructor_sig;
      emit signature `None "val to_proto: t -> Runtime'.Writer.t";
      emit signature `None "val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result";
 
+     (* Emit implementation *)
      emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
      emit implementation `None "type t = %s %s" type' params.annot;
      emit implementation `Begin "let make =";
@@ -258,11 +263,17 @@ let rec emit_message ~params ~syntax scope
      emit implementation `End "" ) ;
   {module_name; signature; implementation}
 
+(* Implementation = message definitions + services *)
 let append_impl ~params ~syntax scope message_type services =
-  let {module_name = _; implementation; _} = emit_message ~params ~syntax scope message_type in
+  (* Emit messages types *)
+  let {module_name = _; implementation; _} =
+    emit_message ~params ~syntax scope message_type in
+
+  (* Emit services *)
   List.iter ~f:(fun service ->
     Code.append implementation (emit_service_type scope service)
   ) services;
+
   implementation
 
 let emit_banner impl (params:Parameters.t) name syntax =
@@ -287,13 +298,12 @@ let emit_banner impl (params:Parameters.t) name syntax =
   emit impl `None "*)"
 
 (* Name is the file path starting from proto paths given to protoc.  *)
-let parse_proto_file ~params scope
-      FileDescriptorProto.{ name;
+let parse_proto_file ~params type_db
+      (FileDescriptorProto.{ name;
                             message_type = message_types;
                             enum_type = enum_types;
                             service = services; extension;
-                            syntax; _ }
-  =
+                             syntax; _ } as proto_file) =
   let name = Option.get name in
   let syntax = match syntax with
     | None | Some "proto2" -> `Proto2
@@ -314,5 +324,8 @@ let parse_proto_file ~params scope
                      field = []; extension; extension_range = []; oneof_decl = [];
                      options = None; reserved_range = []; reserved_name = []; }
   in
+  (* NEW SCOPE is created HERE.  *)
+  let scope = Scope.create proto_file type_db in
+  (* *)
   append implementation (append_impl ~params ~syntax scope message_type services);
   implementation

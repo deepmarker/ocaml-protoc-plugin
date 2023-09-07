@@ -1,4 +1,4 @@
-open Include
+open IncludeInclude
 module Enum = Enum.Enum_test
 let%expect_test _ =
   let module T = Include.I in
