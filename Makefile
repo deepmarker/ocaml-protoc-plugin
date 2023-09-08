@@ -1,6 +1,6 @@
 GOOGLE_INCLUDE=$(shell pkg-config protobuf --variable=includedir)/google/protobuf
 
-all: clean test
+all: build
 
 .PHONY: build
 build: ## Build

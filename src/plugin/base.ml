@@ -23,7 +23,7 @@ end
 module StringListSet = Set.Make(StringList)
 module StringListMap = Map.Make(StringList)
 
-let debug_mode = true
+let debug_mode = false
 
 let debug =
   match debug_mode with
