@@ -1,5 +1,9 @@
 (library
  (name ocaml_protoc_plugin)
  (public_name ocaml-protoc-plugin)
+ (preprocess (pps ppx_sexp_conv))
+ (libraries
+   sexplib
+   base)
  (synopsis "Serialization and deserialization of protobuf types")
 )

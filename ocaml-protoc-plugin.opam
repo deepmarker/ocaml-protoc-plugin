@@ -16,6 +16,8 @@ depends: [
   "conf-protoc" {>= "1.0.0"}
   "dune" {>= "3.2"}
   "ocaml" {>= "4.08.0"}
+  "base" {>= "v0.16"}
+  "sexplib" {>= "v0.16"}
   "ppx_expect" {with-test}
   "ppx_inline_test" {with-test}
   "ppx_deriving" {with-test}
