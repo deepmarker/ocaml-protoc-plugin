@@ -1,15 +1,16 @@
 open Base
+open Ppx_yojson_conv_lib.Yojson_conv
 
 type t =
-  | Varint of Int64.t (* int32, int64, uint32, uint64, sint32, sint64, bool, enum *)
-  | Fixed_64_bit of Int64.t (* fixed64, sfixed64, double *)
+  | Varint of int64 (* int32, int64, uint32, uint64, sint32, sint64, bool, enum *)
+  | Fixed_64_bit of int64 (* fixed64, sfixed64, double *)
   | Length_delimited of {
       offset : int;
       length : int;
       data : string;
     } (* string, bytes, embedded messages, packed repeated fields *)
-  | Fixed_32_bit of Int32.t (* fixed32, sfixed32, float *)
-[@@deriving sexp]
+  | Fixed_32_bit of int32 (* fixed32, sfixed32, float *)
+[@@deriving sexp, yojson]
 
 let pp ppf t = Sexp.pp ppf (sexp_of_t t)
 let show t = Stdlib.Format.asprintf "%a" pp t

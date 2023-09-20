@@ -36,6 +36,7 @@ The types generated aims to create ocaml idiomatic types;
   (base (>= 0.16))
   (sexplib (>= 0.16))
   (ppx_sexp_conv (>= 0.16))
+  (ppx_yojson_conv (>= 0.16))
   (ppx_expect :with-test)
   (ppx_inline_test :with-test)
   (ppx_deriving :with-test)

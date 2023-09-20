@@ -1,7 +1,7 @@
 (library
  (name        google_types)
  (public_name ocaml-protoc-plugin.google_types)
- (preprocess (pps ppx_sexp_conv))
+ (preprocess (pps ppx_sexp_conv ppx_yojson_conv))
  (libraries
    ocaml_protoc_plugin
    base
@@ -32,7 +32,7 @@
  (action
   (run protoc -I %{read-lines:google_include}
        "--plugin=protoc-gen-ocaml=%{plugin}"
-       "--ocaml_out=open=Base;annot=[@@deriving sexp_of]:."
+       "--ocaml_out=open=Base;open=Ppx_yojson_conv_lib.Yojson_conv;annot=[@@deriving sexp_of,yojson]:."
        %{read-lines:google_include}/google/protobuf/any.proto
        %{read-lines:google_include}/google/protobuf/api.proto
        %{read-lines:google_include}/google/protobuf/descriptor.proto
