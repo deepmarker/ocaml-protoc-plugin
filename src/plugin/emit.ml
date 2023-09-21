@@ -29,7 +29,7 @@ let emit_enum_type ~scope ~params
   append signature t;
   append implementation t;
   emit signature `None "val to_int: t -> int";
-  emit signature `None "val from_int: int -> (t, [> Runtime'.Result.error]) Result.t";
+  emit signature `None "val from_int: int -> (t, [> Runtime'.Result.error]) Stdlib.Result.t";
 
   emit implementation `Begin "let to_int = function";
   List.iter ~f:(fun EnumValueDescriptorProto.{name; number; _} ->
@@ -130,7 +130,7 @@ let emit_extension ~scope ~params (field : FieldDescriptorProto.t) =
   append implementation signature;
 
   emit signature `None "type t = %s %s" t.type' params.annot;
-  emit signature `None "val get: %s -> (%s, [> Runtime'.Result.error]) Result.t" extendee_type t.type';
+  emit signature `None "val get: %s -> (%s, [> Runtime'.Result.error]) Stdlib.Result.t" extendee_type t.type';
   emit signature `None "val set: %s -> %s -> %s" extendee_type t.type' extendee_type;
 
   emit implementation `None "type t = %s %s" t.type' params.annot;
@@ -240,7 +240,7 @@ let rec emit_message ~params ~syntax scope
      emit signature `None "type t = %s %s" type' params.annot;
      emit signature `None "val make : %s" default_constructor_sig;
      emit signature `None "val to_proto: t -> Runtime'.Writer.t";
-     emit signature `None "val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) Result.t";
+     emit signature `None "val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) Stdlib.Result.t";
 
      (* Emit implementation *)
      emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
