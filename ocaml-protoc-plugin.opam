@@ -23,9 +23,7 @@ bug-reports: "https://github.com/issuu/ocaml-protoc-plugin/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.10"}
-  "base" {>= "0.16"}
-  "sexplib" {>= "0.16"}
-  "ppx_sexp_conv" {>= "0.16"}
+  "core" {>= "0.16"}
   "ppx_yojson_conv" {>= "0.16"}
   "ppx_expect" {with-test}
   "ppx_inline_test" {with-test}
