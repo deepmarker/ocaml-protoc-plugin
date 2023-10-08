@@ -1,7 +1,0 @@
-(library
- (name        protobuf_core)
- (public_name ocaml-protoc-plugin.core)
- (libraries
-   core
-   google_types)
- (synopsis "Protobuf - Core helpers"))

@@ -71,3 +71,15 @@ let pp pp fmt = function
   | Ok v -> Format.fprintf fmt "Ok %a" pp v
   | Error (#error as e) -> Format.fprintf fmt "Error %a" pp_error e
 (* let show : 'a t -> string = Format.asprintf "%a" pp *)
+
+open Base
+
+let to_or_error = function
+  | Ok x -> Ok x
+  | Error x -> Error (Error.of_string (show_error x))
+;;
+
+let ok_exn = function
+  | Ok x -> x
+  | Error x -> Stdlib.Format.kasprintf failwith "%a" pp_error x
+;;
