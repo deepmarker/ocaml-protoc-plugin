@@ -823,8 +823,8 @@ module Google = struct
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end
       val name': unit -> string
-      type t = { name: UninterpretedOption.NamePart.t list; identifier_value: string option; positive_int_value: int option; negative_int_value: int option; double_value: float option; string_value: bytes option; aggregate_value: string option } 
-      val make : ?name:UninterpretedOption.NamePart.t list -> ?identifier_value:string -> ?positive_int_value:int -> ?negative_int_value:int -> ?double_value:float -> ?string_value:bytes -> ?aggregate_value:string -> unit -> t
+      type t = { name: UninterpretedOption.NamePart.t list; identifier_value: string option; positive_int_value: int option; negative_int_value: int option; double_value: float option; string_value: string option; aggregate_value: string option } 
+      val make : ?name:UninterpretedOption.NamePart.t list -> ?identifier_value:string -> ?positive_int_value:int -> ?negative_int_value:int -> ?double_value:float -> ?string_value:string -> ?aggregate_value:string -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
@@ -856,7 +856,7 @@ module Google = struct
         
       end
       let name' () = "descriptor.google.protobuf.UninterpretedOption"
-      type t = { name: UninterpretedOption.NamePart.t list; identifier_value: string option; positive_int_value: int option; negative_int_value: int option; double_value: float option; string_value: bytes option; aggregate_value: string option }
+      type t = { name: UninterpretedOption.NamePart.t list; identifier_value: string option; positive_int_value: int option; negative_int_value: int option; double_value: float option; string_value: string option; aggregate_value: string option }
       let make =
         fun ?name ?identifier_value ?positive_int_value ?negative_int_value ?double_value ?string_value ?aggregate_value () -> 
         let name = match name with Some v -> v | None -> [] in

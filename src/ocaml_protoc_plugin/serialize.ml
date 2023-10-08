@@ -50,7 +50,7 @@ let rec field_of_spec: type a. a spec -> a -> Field.t = function
 
   | Bool -> fun v -> unsigned_varint (match v with | true -> 1L | false -> 0L)
   | String -> fun v -> Length_delimited {offset = 0; length = String.length v; data = v}
-  | Bytes -> fun v -> Length_delimited {offset = 0; length = Bytes.length v; data = Bytes.to_string v}
+  | Bytes -> fun v -> Length_delimited {offset = 0; length = String.length v; data = v}
   | Enum f ->
     let to_field = field_of_spec UInt64 in
     fun v -> f v |> Int64.of_int |> to_field

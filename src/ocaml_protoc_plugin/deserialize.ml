@@ -125,7 +125,7 @@ let rec type_of_spec: type a. a spec -> 'b * a decoder =
       | Field.Length_delimited {offset; length; data} -> return (String.sub ~pos:offset ~len:length data)
       | field -> error_wrong_field "string" field)
   | Bytes -> (`Length_delimited, function
-      | Field.Length_delimited {offset; length; data} -> return (String.sub ~pos:offset ~len:length data |> Bytes.of_string)
+      | Field.Length_delimited {offset; length; data} -> return (String.sub ~pos:offset ~len:length data)
       | field -> error_wrong_field "string" field)
   | Message from_proto -> (`Length_delimited, function
       | Field.Length_delimited {offset; length; data} -> from_proto (Reader.create ~offset ~length data)

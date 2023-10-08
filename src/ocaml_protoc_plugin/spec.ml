@@ -37,7 +37,7 @@ module Make(T : T) = struct
 
     | Bool : bool spec
     | String : string spec
-    | Bytes : bytes spec
+    | Bytes : string spec
     | Enum :  ('a, int -> 'a Result.t, 'a -> int) T.dir -> 'a spec
     | Message : ('a, Reader.t -> 'a Result.t, 'a -> Writer.t) T.dir -> 'a spec
 
@@ -88,7 +88,7 @@ module Make(T : T) = struct
     let some v = Some v
     let none = None
     let proto2 v = Proto2 v
-    let proto2_bytes v = Proto2 (Some (Bytes.of_string v))
+    let proto2_bytes v = Proto2 (Some v)
     let proto3 = Proto3
     let required = Required
 

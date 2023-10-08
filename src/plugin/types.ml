@@ -75,8 +75,8 @@ let make_default: type a. a spec -> string -> a = function
   | SFixed64_int -> int_of_string
 
   | Bool -> bool_of_string
-  | String -> fun x -> x
-  | Bytes -> Bytes.of_string
+  | String -> Fun.id
+  | Bytes -> Fun.id
   | Enum _ -> fun x ->
     Format.kasprintf failwith "Defaults for enums cannot be handled here: %s" x
   (* Scope.get_scoped_name ~postfix:x scope type_name*)
@@ -112,7 +112,7 @@ let string_of_default: type a. a spec -> a -> string = function
 
   | Bool -> string_of_bool
   | String -> sprintf "{|%s|}"
-  | Bytes -> fun bytes -> sprintf "(Bytes.of_string {|%s|})" (Bytes.to_string bytes)
+  | Bytes ->  sprintf "{|%s|}"
   | Enum (_, _, _,  s) -> fun _ -> Option.get s
   | Message _ -> failwith "Messages defaults are not relevant"
 
@@ -146,7 +146,7 @@ let default_of_spec: type a. a spec -> string = fun spec -> match spec with
 
   | Bool -> string_of_default spec false
   | String -> string_of_default spec ""
-  | Bytes -> string_of_default spec (Bytes.of_string "")
+  | Bytes -> string_of_default spec ""
   | Enum (_ , s, _,  _) -> sprintf {|(%s 0 |> Runtime'.Result.get ~msg:"Code gen error")|} s
   | Message _ -> failwith "Messages defaults are not relevant"
 
@@ -180,8 +180,7 @@ let string_of_spec: type a. [`Deserialize | `Serialize] -> a spec -> string = fu
   | _, SFixed64_int -> "sfixed64_int"
 
   | _, Bool -> "bool"
-  | _, String -> "string"
-  | _, Bytes -> "bytes"
+  | _, String | _, Bytes -> "string"
   | `Deserialize, Enum (_, deser, _ , _)  -> sprintf "(enum %s)" deser
   | `Serialize,   Enum (_, _,    ser, _)  -> sprintf "(enum %s)" ser
   | `Deserialize, Message (_, deser, _ , _) -> sprintf "(message (fun t -> %s t))" deser
@@ -195,7 +194,7 @@ let type_of_spec: type a. a spec -> string = function
   | UInt64 | Int64 | SInt64 | Fixed64 | SFixed64 -> "int64"
   | Bool -> "bool"
   | String -> "string"
-  | Bytes -> "bytes"
+  | Bytes -> "Runtime'.ProtoBytes.t"
   | Enum (type', _, _, _) -> type'
   | Message (type', _, _, _) -> type'
 
@@ -315,7 +314,7 @@ let type_name_of_basic_type (t:FieldDescriptorProto.Type.t) = match t with
   | TYPE_FIXED32 -> "fixed32"
   | TYPE_BOOL -> "bool"
   | TYPE_STRING -> "string"
-  | TYPE_BYTES -> "bytes"
+  | TYPE_BYTES -> "string"
   | TYPE_UINT32 -> "uint32"
   | TYPE_SFIXED32 -> "sfixed32"
   | TYPE_SFIXED64 -> "sfixed64"

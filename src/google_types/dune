@@ -7,6 +7,7 @@
    core
    core_unix.time_ns_unix
  )
+ (wrapped false)
  (synopsis "Google well known types")
 )
 

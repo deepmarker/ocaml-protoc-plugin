@@ -18,7 +18,7 @@ let%expect_test _ =
         sfixed32 = 12l;
         bool = true;
         string = "string";
-        bytes = Bytes.of_string "bytes";
+        bytes = "string";
       }
   in
   Test_lib.test_encode (module T) t;
@@ -38,7 +38,7 @@ let%expect_test _ =
     sfixed32: 12
     bool: true
     string: "string"
-    bytes: "bytes" |}]
+    bytes: "string" |}]
 
 let%expect_test _ =
   let module T = Types in
@@ -59,7 +59,7 @@ let%expect_test _ =
         sfixed32 = 0l;
         bool = false;
         string = "";
-        bytes = Bytes.of_string "";
+        bytes = "";
       }
   in
   let bin = T.to_proto t in
