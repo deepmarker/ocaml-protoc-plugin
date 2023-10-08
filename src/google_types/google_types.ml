@@ -7,11 +7,11 @@ module Descriptor = GoogleProtobufDescriptor
 module Duration = struct
   include GoogleProtobufDuration.Duration
 
-  let span_of_duration (x : t) =
+  let to_span x =
     Time_ns.Span.of_int_ns ((x.seconds * 1_000_000_000) + x.nanos)
   ;;
 
-  let duration_of_span x =
+  let of_span x =
     let ns = Time_ns.Span.to_int_ns x in
     let seconds = ns / 1_000_000_000 in
     let nanos = ns mod 1_000_000_000 in
@@ -19,12 +19,12 @@ module Duration = struct
   ;;
 
   let yojson_of_t t =
-    Stdlib.Format.ksprintf (fun s -> `String s) "%fs" (Time_ns.Span.to_sec (span_of_duration t))
+    Stdlib.Format.ksprintf (fun s -> `String s) "%fs" (Time_ns.Span.to_sec (to_span t))
 
   let t_of_yojson json =
     let str = Yojson.Safe.Util.to_string json in
     let secs = Float.of_string (String.sub str ~pos:0 ~len:(String.length str -1)) in
-    Time_ns.Span.of_sec secs |> duration_of_span
+    Time_ns.Span.of_sec secs |> of_span
 end
 
 module Empty = GoogleProtobufEmpty.Empty
@@ -73,11 +73,11 @@ end
 module Timestamp = struct
   include GoogleProtobufTimestamp.Timestamp
 
-  let time_of_timestamp (x : t) =
+  let to_time_ns x =
     Time_ns.of_int_ns_since_epoch ((x.seconds * 1_000_000_000) + x.nanos)
   ;;
 
-  let timestamp_of_time x =
+  let of_time_ns x =
     let ns = Time_ns.to_int_ns_since_epoch x in
     let seconds = ns / 1_000_000_000 in
     let nanos = ns mod 1_000_000_000 in
@@ -85,10 +85,10 @@ module Timestamp = struct
   ;;
 
   let yojson_of_t t =
-    `String (time_of_timestamp t |> Time_ns.to_string_iso8601_basic ~zone:Time_ns.Zone.utc)
+    `String (to_time_ns t |> Time_ns.to_string_iso8601_basic ~zone:Time_ns.Zone.utc)
 
   let t_of_yojson json =
-    Yojson.Safe.Util.to_string json |> Time_ns.of_string |> timestamp_of_time
+    Yojson.Safe.Util.to_string json |> Time_ns.of_string |> of_time_ns
 end
 
 module Type = GoogleProtobufType
