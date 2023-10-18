@@ -33,8 +33,11 @@ The types generated aims to create ocaml idiomatic types;
  (depends
    ocaml
    dune
-  (core (>= 0.16))
-  (ppx_yojson_conv (>= 0.16))
+  (core (>= v0.16))
+  (core_unix (>= v0.16))
+  (ppx_yojson_conv (>= v0.16))
+  (yojson (>= 2.1.0))
+  (base64 (>= 3.5.1))
   (ppx_expect :with-test)
   (ppx_inline_test :with-test)
   (ppx_deriving :with-test)
