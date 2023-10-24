@@ -26,13 +26,13 @@ end
 module rec Options : sig
   val name': unit -> string
   type t = bool 
-  val make : ?mangle_names:bool -> unit -> t
+  val create : ?mangle_names:bool -> unit -> t
   val to_proto: t -> Runtime'.Writer.t
   val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
 end = struct 
   let name' () = "options.Options"
   type t = bool
-  let make =
+  let create =
     fun ?mangle_names () -> 
     let mangle_names = match mangle_names with Some v -> v | None -> false in
     mangle_names

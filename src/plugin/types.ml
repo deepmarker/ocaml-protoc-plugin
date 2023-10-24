@@ -46,7 +46,7 @@ type t = {
   default_constructor_impl: string;
 }
 
-let make_default: type a. a spec -> string -> a = function
+let create_default: type a. a spec -> string -> a = function
   | Double -> float_of_string
   | Float -> float_of_string
 
@@ -404,7 +404,7 @@ let c_of_field ~params ~syntax ~scope field =
   (* Proto2 optional fields with a default *)
   | `Proto2, { label = Some Label.LABEL_OPTIONAL; type' = Some type'; default_value = Some default; _ } ->
     let Espec spec = spec_of_type ~params ~scope type_name (Some default) type' in
-    let default = make_default spec default in
+    let default = create_default spec default in
     Basic (number, spec, Proto2 default)
     |> c_of_compound name
 
@@ -560,7 +560,7 @@ let typestr_of_type = function
   | { name; modifier = List; _ } -> sprintf "%s list" name
   | { name; modifier = Optional; _ } -> sprintf "%s option" name
 
-let make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields oneof_decls =
+let create ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields oneof_decls =
   let ts =
     split_oneof_decl fields oneof_decls
     |> List.map ~f:(function

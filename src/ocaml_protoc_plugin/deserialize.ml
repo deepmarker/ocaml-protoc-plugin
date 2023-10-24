@@ -216,7 +216,7 @@ let sentinal: type a. a compound -> (int * unit decoder) list * a sentinal = fun
     in
     ([index, read], get)
   | Oneof oneofs ->
-    let make_reader: a ref -> a oneof -> (int * unit decoder) = fun v (Oneof_elem (index, spec, constr)) ->
+    let create_reader: a ref -> a oneof -> (int * unit decoder) = fun v (Oneof_elem (index, spec, constr)) ->
       let _, read = type_of_spec spec in
       let read field =
         read field >>| fun value -> v := (constr value)
@@ -225,7 +225,7 @@ let sentinal: type a. a compound -> (int * unit decoder) list * a sentinal = fun
     in
     let v = ref `not_set in
     let get () = return !v in
-    List.map ~f:(make_reader v) oneofs, get
+    List.map ~f:(create_reader v) oneofs, get
 
 module Map = struct
   include Map.Make (struct type t = int let compare = compare end)

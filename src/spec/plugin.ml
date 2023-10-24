@@ -29,13 +29,13 @@ module Google = struct
       module rec Version : sig
         val name': unit -> string
         type t = { major: int option; minor: int option; patch: int option; suffix: string option } 
-        val make : ?major:int -> ?minor:int -> ?patch:int -> ?suffix:string -> unit -> t
+        val create : ?major:int -> ?minor:int -> ?patch:int -> ?suffix:string -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
         let name' () = "plugin.google.protobuf.compiler.Version"
         type t = { major: int option; minor: int option; patch: int option; suffix: string option }
-        let make =
+        let create =
           fun ?major ?minor ?patch ?suffix () -> 
           
           { major; minor; patch; suffix }
@@ -56,13 +56,13 @@ module Google = struct
       and CodeGeneratorRequest : sig
         val name': unit -> string
         type t = { file_to_generate: string list; parameter: string option; proto_file: Imported'modules.Descriptor.Google.Protobuf.FileDescriptorProto.t list; compiler_version: Version.t option } 
-        val make : ?file_to_generate:string list -> ?parameter:string -> ?proto_file:Imported'modules.Descriptor.Google.Protobuf.FileDescriptorProto.t list -> ?compiler_version:Version.t -> unit -> t
+        val create : ?file_to_generate:string list -> ?parameter:string -> ?proto_file:Imported'modules.Descriptor.Google.Protobuf.FileDescriptorProto.t list -> ?compiler_version:Version.t -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
         let name' () = "plugin.google.protobuf.compiler.CodeGeneratorRequest"
         type t = { file_to_generate: string list; parameter: string option; proto_file: Imported'modules.Descriptor.Google.Protobuf.FileDescriptorProto.t list; compiler_version: Version.t option }
-        let make =
+        let create =
           fun ?file_to_generate ?parameter ?proto_file ?compiler_version () -> 
           let file_to_generate = match file_to_generate with Some v -> v | None -> [] in
           let proto_file = match proto_file with Some v -> v | None -> [] in
@@ -90,13 +90,13 @@ module Google = struct
         and File : sig
           val name': unit -> string
           type t = { name: string option; insertion_point: string option; content: string option } 
-          val make : ?name:string -> ?insertion_point:string -> ?content:string -> unit -> t
+          val create : ?name:string -> ?insertion_point:string -> ?content:string -> unit -> t
           val to_proto: t -> Runtime'.Writer.t
           val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
         end
         val name': unit -> string
         type t = { error: string option; supported_features: int option; file: CodeGeneratorResponse.File.t list } 
-        val make : ?error:string -> ?supported_features:int -> ?file:CodeGeneratorResponse.File.t list -> unit -> t
+        val create : ?error:string -> ?supported_features:int -> ?file:CodeGeneratorResponse.File.t list -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
@@ -119,13 +119,13 @@ module Google = struct
         and File : sig
           val name': unit -> string
           type t = { name: string option; insertion_point: string option; content: string option } 
-          val make : ?name:string -> ?insertion_point:string -> ?content:string -> unit -> t
+          val create : ?name:string -> ?insertion_point:string -> ?content:string -> unit -> t
           val to_proto: t -> Runtime'.Writer.t
           val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
         end = struct 
           let name' () = "plugin.google.protobuf.compiler.CodeGeneratorResponse.File"
           type t = { name: string option; insertion_point: string option; content: string option }
-          let make =
+          let create =
             fun ?name ?insertion_point ?content () -> 
             
             { name; insertion_point; content }
@@ -145,7 +145,7 @@ module Google = struct
         end
         let name' () = "plugin.google.protobuf.compiler.CodeGeneratorResponse"
         type t = { error: string option; supported_features: int option; file: CodeGeneratorResponse.File.t list }
-        let make =
+        let create =
           fun ?error ?supported_features ?file () -> 
           let file = match file with Some v -> v | None -> [] in
           { error; supported_features; file }

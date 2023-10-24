@@ -15,7 +15,7 @@ module Duration = struct
     let ns = Time_ns.Span.to_int_ns x in
     let seconds = ns / 1_000_000_000 in
     let nanos = ns mod 1_000_000_000 in
-    make ~seconds ~nanos ()
+    create ~seconds ~nanos ()
   ;;
 
   let yojson_of_t t =
@@ -81,7 +81,7 @@ module Timestamp = struct
     let ns = Time_ns.to_int_ns_since_epoch x in
     let seconds = ns / 1_000_000_000 in
     let nanos = ns mod 1_000_000_000 in
-    make ~seconds ~nanos ()
+    create ~seconds ~nanos ()
   ;;
 
   let yojson_of_t t =

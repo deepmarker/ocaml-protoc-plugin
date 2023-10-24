@@ -23,13 +23,13 @@ module Google = struct
     module rec FileDescriptorSet : sig
       val name': unit -> string
       type t = FileDescriptorProto.t list 
-      val make : ?file:FileDescriptorProto.t list -> unit -> t
+      val create : ?file:FileDescriptorProto.t list -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.FileDescriptorSet"
       type t = FileDescriptorProto.t list
-      let make =
+      let create =
         fun ?file () -> 
         let file = match file with Some v -> v | None -> [] in
         file
@@ -50,13 +50,13 @@ module Google = struct
     and FileDescriptorProto : sig
       val name': unit -> string
       type t = { name: string option; package: string option; dependency: string list; public_dependency: int list; weak_dependency: int list; message_type: DescriptorProto.t list; enum_type: EnumDescriptorProto.t list; service: ServiceDescriptorProto.t list; extension: FieldDescriptorProto.t list; options: FileOptions.t option; source_code_info: SourceCodeInfo.t option; syntax: string option } 
-      val make : ?name:string -> ?package:string -> ?dependency:string list -> ?public_dependency:int list -> ?weak_dependency:int list -> ?message_type:DescriptorProto.t list -> ?enum_type:EnumDescriptorProto.t list -> ?service:ServiceDescriptorProto.t list -> ?extension:FieldDescriptorProto.t list -> ?options:FileOptions.t -> ?source_code_info:SourceCodeInfo.t -> ?syntax:string -> unit -> t
+      val create : ?name:string -> ?package:string -> ?dependency:string list -> ?public_dependency:int list -> ?weak_dependency:int list -> ?message_type:DescriptorProto.t list -> ?enum_type:EnumDescriptorProto.t list -> ?service:ServiceDescriptorProto.t list -> ?extension:FieldDescriptorProto.t list -> ?options:FileOptions.t -> ?source_code_info:SourceCodeInfo.t -> ?syntax:string -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.FileDescriptorProto"
       type t = { name: string option; package: string option; dependency: string list; public_dependency: int list; weak_dependency: int list; message_type: DescriptorProto.t list; enum_type: EnumDescriptorProto.t list; service: ServiceDescriptorProto.t list; extension: FieldDescriptorProto.t list; options: FileOptions.t option; source_code_info: SourceCodeInfo.t option; syntax: string option }
-      let make =
+      let create =
         fun ?name ?package ?dependency ?public_dependency ?weak_dependency ?message_type ?enum_type ?service ?extension ?options ?source_code_info ?syntax () -> 
         let dependency = match dependency with Some v -> v | None -> [] in
         let public_dependency = match public_dependency with Some v -> v | None -> [] in
@@ -84,33 +84,33 @@ module Google = struct
       module rec ExtensionRange : sig
         val name': unit -> string
         type t = { start: int option; end': int option; options: ExtensionRangeOptions.t option } 
-        val make : ?start:int -> ?end':int -> ?options:ExtensionRangeOptions.t -> unit -> t
+        val create : ?start:int -> ?end':int -> ?options:ExtensionRangeOptions.t -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end
       and ReservedRange : sig
         val name': unit -> string
         type t = { start: int option; end': int option } 
-        val make : ?start:int -> ?end':int -> unit -> t
+        val create : ?start:int -> ?end':int -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end
       val name': unit -> string
       type t = { name: string option; field: FieldDescriptorProto.t list; extension: FieldDescriptorProto.t list; nested_type: DescriptorProto.t list; enum_type: EnumDescriptorProto.t list; extension_range: DescriptorProto.ExtensionRange.t list; oneof_decl: OneofDescriptorProto.t list; options: MessageOptions.t option; reserved_range: DescriptorProto.ReservedRange.t list; reserved_name: string list } 
-      val make : ?name:string -> ?field:FieldDescriptorProto.t list -> ?extension:FieldDescriptorProto.t list -> ?nested_type:DescriptorProto.t list -> ?enum_type:EnumDescriptorProto.t list -> ?extension_range:DescriptorProto.ExtensionRange.t list -> ?oneof_decl:OneofDescriptorProto.t list -> ?options:MessageOptions.t -> ?reserved_range:DescriptorProto.ReservedRange.t list -> ?reserved_name:string list -> unit -> t
+      val create : ?name:string -> ?field:FieldDescriptorProto.t list -> ?extension:FieldDescriptorProto.t list -> ?nested_type:DescriptorProto.t list -> ?enum_type:EnumDescriptorProto.t list -> ?extension_range:DescriptorProto.ExtensionRange.t list -> ?oneof_decl:OneofDescriptorProto.t list -> ?options:MessageOptions.t -> ?reserved_range:DescriptorProto.ReservedRange.t list -> ?reserved_name:string list -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       module rec ExtensionRange : sig
         val name': unit -> string
         type t = { start: int option; end': int option; options: ExtensionRangeOptions.t option } 
-        val make : ?start:int -> ?end':int -> ?options:ExtensionRangeOptions.t -> unit -> t
+        val create : ?start:int -> ?end':int -> ?options:ExtensionRangeOptions.t -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
         let name' () = "descriptor.google.protobuf.DescriptorProto.ExtensionRange"
         type t = { start: int option; end': int option; options: ExtensionRangeOptions.t option }
-        let make =
+        let create =
           fun ?start ?end' ?options () -> 
           
           { start; end'; options }
@@ -131,13 +131,13 @@ module Google = struct
       and ReservedRange : sig
         val name': unit -> string
         type t = { start: int option; end': int option } 
-        val make : ?start:int -> ?end':int -> unit -> t
+        val create : ?start:int -> ?end':int -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
         let name' () = "descriptor.google.protobuf.DescriptorProto.ReservedRange"
         type t = { start: int option; end': int option }
-        let make =
+        let create =
           fun ?start ?end' () -> 
           
           { start; end' }
@@ -157,7 +157,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.DescriptorProto"
       type t = { name: string option; field: FieldDescriptorProto.t list; extension: FieldDescriptorProto.t list; nested_type: DescriptorProto.t list; enum_type: EnumDescriptorProto.t list; extension_range: DescriptorProto.ExtensionRange.t list; oneof_decl: OneofDescriptorProto.t list; options: MessageOptions.t option; reserved_range: DescriptorProto.ReservedRange.t list; reserved_name: string list }
-      let make =
+      let create =
         fun ?name ?field ?extension ?nested_type ?enum_type ?extension_range ?oneof_decl ?options ?reserved_range ?reserved_name () -> 
         let field = match field with Some v -> v | None -> [] in
         let extension = match extension with Some v -> v | None -> [] in
@@ -185,13 +185,13 @@ module Google = struct
     and ExtensionRangeOptions : sig
       val name': unit -> string
       type t = { uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.ExtensionRangeOptions"
       type t = { uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let uninterpreted_option = match uninterpreted_option with Some v -> v | None -> [] in
         { uninterpreted_option; extensions' }
@@ -222,7 +222,7 @@ module Google = struct
       end
       val name': unit -> string
       type t = { name: string option; number: int option; label: FieldDescriptorProto.Label.t option; type': FieldDescriptorProto.Type.t option; type_name: string option; extendee: string option; default_value: string option; oneof_index: int option; json_name: string option; options: FieldOptions.t option; proto3_optional: bool option } 
-      val make : ?name:string -> ?number:int -> ?label:FieldDescriptorProto.Label.t -> ?type':FieldDescriptorProto.Type.t -> ?type_name:string -> ?extendee:string -> ?default_value:string -> ?oneof_index:int -> ?json_name:string -> ?options:FieldOptions.t -> ?proto3_optional:bool -> unit -> t
+      val create : ?name:string -> ?number:int -> ?label:FieldDescriptorProto.Label.t -> ?type':FieldDescriptorProto.Type.t -> ?type_name:string -> ?extendee:string -> ?default_value:string -> ?oneof_index:int -> ?json_name:string -> ?options:FieldOptions.t -> ?proto3_optional:bool -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
@@ -294,7 +294,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.FieldDescriptorProto"
       type t = { name: string option; number: int option; label: FieldDescriptorProto.Label.t option; type': FieldDescriptorProto.Type.t option; type_name: string option; extendee: string option; default_value: string option; oneof_index: int option; json_name: string option; options: FieldOptions.t option; proto3_optional: bool option }
-      let make =
+      let create =
         fun ?name ?number ?label ?type' ?type_name ?extendee ?default_value ?oneof_index ?json_name ?options ?proto3_optional () -> 
         
         { name; number; label; type'; type_name; extendee; default_value; oneof_index; json_name; options; proto3_optional }
@@ -315,13 +315,13 @@ module Google = struct
     and OneofDescriptorProto : sig
       val name': unit -> string
       type t = { name: string option; options: OneofOptions.t option } 
-      val make : ?name:string -> ?options:OneofOptions.t -> unit -> t
+      val create : ?name:string -> ?options:OneofOptions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.OneofDescriptorProto"
       type t = { name: string option; options: OneofOptions.t option }
-      let make =
+      let create =
         fun ?name ?options () -> 
         
         { name; options }
@@ -343,26 +343,26 @@ module Google = struct
       module rec EnumReservedRange : sig
         val name': unit -> string
         type t = { start: int option; end': int option } 
-        val make : ?start:int -> ?end':int -> unit -> t
+        val create : ?start:int -> ?end':int -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end
       val name': unit -> string
       type t = { name: string option; value: EnumValueDescriptorProto.t list; options: EnumOptions.t option; reserved_range: EnumDescriptorProto.EnumReservedRange.t list; reserved_name: string list } 
-      val make : ?name:string -> ?value:EnumValueDescriptorProto.t list -> ?options:EnumOptions.t -> ?reserved_range:EnumDescriptorProto.EnumReservedRange.t list -> ?reserved_name:string list -> unit -> t
+      val create : ?name:string -> ?value:EnumValueDescriptorProto.t list -> ?options:EnumOptions.t -> ?reserved_range:EnumDescriptorProto.EnumReservedRange.t list -> ?reserved_name:string list -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       module rec EnumReservedRange : sig
         val name': unit -> string
         type t = { start: int option; end': int option } 
-        val make : ?start:int -> ?end':int -> unit -> t
+        val create : ?start:int -> ?end':int -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
         let name' () = "descriptor.google.protobuf.EnumDescriptorProto.EnumReservedRange"
         type t = { start: int option; end': int option }
-        let make =
+        let create =
           fun ?start ?end' () -> 
           
           { start; end' }
@@ -382,7 +382,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.EnumDescriptorProto"
       type t = { name: string option; value: EnumValueDescriptorProto.t list; options: EnumOptions.t option; reserved_range: EnumDescriptorProto.EnumReservedRange.t list; reserved_name: string list }
-      let make =
+      let create =
         fun ?name ?value ?options ?reserved_range ?reserved_name () -> 
         let value = match value with Some v -> v | None -> [] in
         let reserved_range = match reserved_range with Some v -> v | None -> [] in
@@ -405,13 +405,13 @@ module Google = struct
     and EnumValueDescriptorProto : sig
       val name': unit -> string
       type t = { name: string option; number: int option; options: EnumValueOptions.t option } 
-      val make : ?name:string -> ?number:int -> ?options:EnumValueOptions.t -> unit -> t
+      val create : ?name:string -> ?number:int -> ?options:EnumValueOptions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.EnumValueDescriptorProto"
       type t = { name: string option; number: int option; options: EnumValueOptions.t option }
-      let make =
+      let create =
         fun ?name ?number ?options () -> 
         
         { name; number; options }
@@ -432,13 +432,13 @@ module Google = struct
     and ServiceDescriptorProto : sig
       val name': unit -> string
       type t = { name: string option; method': MethodDescriptorProto.t list; options: ServiceOptions.t option } 
-      val make : ?name:string -> ?method':MethodDescriptorProto.t list -> ?options:ServiceOptions.t -> unit -> t
+      val create : ?name:string -> ?method':MethodDescriptorProto.t list -> ?options:ServiceOptions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.ServiceDescriptorProto"
       type t = { name: string option; method': MethodDescriptorProto.t list; options: ServiceOptions.t option }
-      let make =
+      let create =
         fun ?name ?method' ?options () -> 
         let method' = match method' with Some v -> v | None -> [] in
         { name; method'; options }
@@ -459,13 +459,13 @@ module Google = struct
     and MethodDescriptorProto : sig
       val name': unit -> string
       type t = { name: string option; input_type: string option; output_type: string option; options: MethodOptions.t option; client_streaming: bool; server_streaming: bool } 
-      val make : ?name:string -> ?input_type:string -> ?output_type:string -> ?options:MethodOptions.t -> ?client_streaming:bool -> ?server_streaming:bool -> unit -> t
+      val create : ?name:string -> ?input_type:string -> ?output_type:string -> ?options:MethodOptions.t -> ?client_streaming:bool -> ?server_streaming:bool -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.MethodDescriptorProto"
       type t = { name: string option; input_type: string option; output_type: string option; options: MethodOptions.t option; client_streaming: bool; server_streaming: bool }
-      let make =
+      let create =
         fun ?name ?input_type ?output_type ?options ?client_streaming ?server_streaming () -> 
         let client_streaming = match client_streaming with Some v -> v | None -> false in
         let server_streaming = match server_streaming with Some v -> v | None -> false in
@@ -492,7 +492,7 @@ module Google = struct
       end
       val name': unit -> string
       type t = { java_package: string option; java_outer_classname: string option; java_multiple_files: bool; java_generate_equals_and_hash: bool option; java_string_check_utf8: bool; optimize_for: FileOptions.OptimizeMode.t; go_package: string option; cc_generic_services: bool; java_generic_services: bool; py_generic_services: bool; php_generic_services: bool; deprecated: bool; cc_enable_arenas: bool; objc_class_prefix: string option; csharp_namespace: string option; swift_prefix: string option; php_class_prefix: string option; php_namespace: string option; php_metadata_namespace: string option; ruby_package: string option; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?java_package:string -> ?java_outer_classname:string -> ?java_multiple_files:bool -> ?java_generate_equals_and_hash:bool -> ?java_string_check_utf8:bool -> ?optimize_for:FileOptions.OptimizeMode.t -> ?go_package:string -> ?cc_generic_services:bool -> ?java_generic_services:bool -> ?py_generic_services:bool -> ?php_generic_services:bool -> ?deprecated:bool -> ?cc_enable_arenas:bool -> ?objc_class_prefix:string -> ?csharp_namespace:string -> ?swift_prefix:string -> ?php_class_prefix:string -> ?php_namespace:string -> ?php_metadata_namespace:string -> ?ruby_package:string -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?java_package:string -> ?java_outer_classname:string -> ?java_multiple_files:bool -> ?java_generate_equals_and_hash:bool -> ?java_string_check_utf8:bool -> ?optimize_for:FileOptions.OptimizeMode.t -> ?go_package:string -> ?cc_generic_services:bool -> ?java_generic_services:bool -> ?py_generic_services:bool -> ?php_generic_services:bool -> ?deprecated:bool -> ?cc_enable_arenas:bool -> ?objc_class_prefix:string -> ?csharp_namespace:string -> ?swift_prefix:string -> ?php_class_prefix:string -> ?php_namespace:string -> ?php_metadata_namespace:string -> ?ruby_package:string -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
@@ -516,7 +516,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.FileOptions"
       type t = { java_package: string option; java_outer_classname: string option; java_multiple_files: bool; java_generate_equals_and_hash: bool option; java_string_check_utf8: bool; optimize_for: FileOptions.OptimizeMode.t; go_package: string option; cc_generic_services: bool; java_generic_services: bool; py_generic_services: bool; php_generic_services: bool; deprecated: bool; cc_enable_arenas: bool; objc_class_prefix: string option; csharp_namespace: string option; swift_prefix: string option; php_class_prefix: string option; php_namespace: string option; php_metadata_namespace: string option; ruby_package: string option; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?java_package ?java_outer_classname ?java_multiple_files ?java_generate_equals_and_hash ?java_string_check_utf8 ?optimize_for ?go_package ?cc_generic_services ?java_generic_services ?py_generic_services ?php_generic_services ?deprecated ?cc_enable_arenas ?objc_class_prefix ?csharp_namespace ?swift_prefix ?php_class_prefix ?php_namespace ?php_metadata_namespace ?ruby_package ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let java_multiple_files = match java_multiple_files with Some v -> v | None -> false in
         let java_string_check_utf8 = match java_string_check_utf8 with Some v -> v | None -> false in
@@ -546,13 +546,13 @@ module Google = struct
     and MessageOptions : sig
       val name': unit -> string
       type t = { message_set_wire_format: bool; no_standard_descriptor_accessor: bool; deprecated: bool; map_entry: bool option; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?message_set_wire_format:bool -> ?no_standard_descriptor_accessor:bool -> ?deprecated:bool -> ?map_entry:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?message_set_wire_format:bool -> ?no_standard_descriptor_accessor:bool -> ?deprecated:bool -> ?map_entry:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.MessageOptions"
       type t = { message_set_wire_format: bool; no_standard_descriptor_accessor: bool; deprecated: bool; map_entry: bool option; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?message_set_wire_format ?no_standard_descriptor_accessor ?deprecated ?map_entry ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let message_set_wire_format = match message_set_wire_format with Some v -> v | None -> false in
         let no_standard_descriptor_accessor = match no_standard_descriptor_accessor with Some v -> v | None -> false in
@@ -586,7 +586,7 @@ module Google = struct
       end
       val name': unit -> string
       type t = { ctype: FieldOptions.CType.t; packed: bool option; jstype: FieldOptions.JSType.t; lazy': bool; deprecated: bool; weak: bool; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?ctype:FieldOptions.CType.t -> ?packed:bool -> ?jstype:FieldOptions.JSType.t -> ?lazy':bool -> ?deprecated:bool -> ?weak:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?ctype:FieldOptions.CType.t -> ?packed:bool -> ?jstype:FieldOptions.JSType.t -> ?lazy':bool -> ?deprecated:bool -> ?weak:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
@@ -628,7 +628,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.FieldOptions"
       type t = { ctype: FieldOptions.CType.t; packed: bool option; jstype: FieldOptions.JSType.t; lazy': bool; deprecated: bool; weak: bool; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?ctype ?packed ?jstype ?lazy' ?deprecated ?weak ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let ctype = match ctype with Some v -> v | None -> FieldOptions.CType.STRING in
         let jstype = match jstype with Some v -> v | None -> FieldOptions.JSType.JS_NORMAL in
@@ -654,13 +654,13 @@ module Google = struct
     and OneofOptions : sig
       val name': unit -> string
       type t = { uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.OneofOptions"
       type t = { uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let uninterpreted_option = match uninterpreted_option with Some v -> v | None -> [] in
         { uninterpreted_option; extensions' }
@@ -681,13 +681,13 @@ module Google = struct
     and EnumOptions : sig
       val name': unit -> string
       type t = { allow_alias: bool option; deprecated: bool; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?allow_alias:bool -> ?deprecated:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?allow_alias:bool -> ?deprecated:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.EnumOptions"
       type t = { allow_alias: bool option; deprecated: bool; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?allow_alias ?deprecated ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let deprecated = match deprecated with Some v -> v | None -> false in
         let uninterpreted_option = match uninterpreted_option with Some v -> v | None -> [] in
@@ -709,13 +709,13 @@ module Google = struct
     and EnumValueOptions : sig
       val name': unit -> string
       type t = { deprecated: bool; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?deprecated:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?deprecated:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.EnumValueOptions"
       type t = { deprecated: bool; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?deprecated ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let deprecated = match deprecated with Some v -> v | None -> false in
         let uninterpreted_option = match uninterpreted_option with Some v -> v | None -> [] in
@@ -737,13 +737,13 @@ module Google = struct
     and ServiceOptions : sig
       val name': unit -> string
       type t = { deprecated: bool; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?deprecated:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?deprecated:bool -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       let name' () = "descriptor.google.protobuf.ServiceOptions"
       type t = { deprecated: bool; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?deprecated ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let deprecated = match deprecated with Some v -> v | None -> false in
         let uninterpreted_option = match uninterpreted_option with Some v -> v | None -> [] in
@@ -770,7 +770,7 @@ module Google = struct
       end
       val name': unit -> string
       type t = { deprecated: bool; idempotency_level: MethodOptions.IdempotencyLevel.t; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t } 
-      val make : ?deprecated:bool -> ?idempotency_level:MethodOptions.IdempotencyLevel.t -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
+      val create : ?deprecated:bool -> ?idempotency_level:MethodOptions.IdempotencyLevel.t -> ?uninterpreted_option:UninterpretedOption.t list -> ?extensions':Runtime'.Extensions.t -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
@@ -794,7 +794,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.MethodOptions"
       type t = { deprecated: bool; idempotency_level: MethodOptions.IdempotencyLevel.t; uninterpreted_option: UninterpretedOption.t list; extensions': Runtime'.Extensions.t }
-      let make =
+      let create =
         fun ?deprecated ?idempotency_level ?uninterpreted_option ?(extensions' = Runtime'.Extensions.default) () -> 
         let deprecated = match deprecated with Some v -> v | None -> false in
         let idempotency_level = match idempotency_level with Some v -> v | None -> MethodOptions.IdempotencyLevel.IDEMPOTENCY_UNKNOWN in
@@ -818,26 +818,26 @@ module Google = struct
       module rec NamePart : sig
         val name': unit -> string
         type t = { name_part: string; is_extension: bool } 
-        val make : name_part:string -> is_extension:bool -> unit -> t
+        val create : name_part:string -> is_extension:bool -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end
       val name': unit -> string
       type t = { name: UninterpretedOption.NamePart.t list; identifier_value: string option; positive_int_value: int option; negative_int_value: int option; double_value: float option; string_value: string option; aggregate_value: string option } 
-      val make : ?name:UninterpretedOption.NamePart.t list -> ?identifier_value:string -> ?positive_int_value:int -> ?negative_int_value:int -> ?double_value:float -> ?string_value:string -> ?aggregate_value:string -> unit -> t
+      val create : ?name:UninterpretedOption.NamePart.t list -> ?identifier_value:string -> ?positive_int_value:int -> ?negative_int_value:int -> ?double_value:float -> ?string_value:string -> ?aggregate_value:string -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       module rec NamePart : sig
         val name': unit -> string
         type t = { name_part: string; is_extension: bool } 
-        val make : name_part:string -> is_extension:bool -> unit -> t
+        val create : name_part:string -> is_extension:bool -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
         let name' () = "descriptor.google.protobuf.UninterpretedOption.NamePart"
         type t = { name_part: string; is_extension: bool }
-        let make =
+        let create =
           fun ~name_part ~is_extension () -> 
           
           { name_part; is_extension }
@@ -857,7 +857,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.UninterpretedOption"
       type t = { name: UninterpretedOption.NamePart.t list; identifier_value: string option; positive_int_value: int option; negative_int_value: int option; double_value: float option; string_value: string option; aggregate_value: string option }
-      let make =
+      let create =
         fun ?name ?identifier_value ?positive_int_value ?negative_int_value ?double_value ?string_value ?aggregate_value () -> 
         let name = match name with Some v -> v | None -> [] in
         { name; identifier_value; positive_int_value; negative_int_value; double_value; string_value; aggregate_value }
@@ -879,26 +879,26 @@ module Google = struct
       module rec Location : sig
         val name': unit -> string
         type t = { path: int list; span: int list; leading_comments: string option; trailing_comments: string option; leading_detached_comments: string list } 
-        val make : ?path:int list -> ?span:int list -> ?leading_comments:string -> ?trailing_comments:string -> ?leading_detached_comments:string list -> unit -> t
+        val create : ?path:int list -> ?span:int list -> ?leading_comments:string -> ?trailing_comments:string -> ?leading_detached_comments:string list -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end
       val name': unit -> string
       type t = SourceCodeInfo.Location.t list 
-      val make : ?location:SourceCodeInfo.Location.t list -> unit -> t
+      val create : ?location:SourceCodeInfo.Location.t list -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       module rec Location : sig
         val name': unit -> string
         type t = { path: int list; span: int list; leading_comments: string option; trailing_comments: string option; leading_detached_comments: string list } 
-        val make : ?path:int list -> ?span:int list -> ?leading_comments:string -> ?trailing_comments:string -> ?leading_detached_comments:string list -> unit -> t
+        val create : ?path:int list -> ?span:int list -> ?leading_comments:string -> ?trailing_comments:string -> ?leading_detached_comments:string list -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
         let name' () = "descriptor.google.protobuf.SourceCodeInfo.Location"
         type t = { path: int list; span: int list; leading_comments: string option; trailing_comments: string option; leading_detached_comments: string list }
-        let make =
+        let create =
           fun ?path ?span ?leading_comments ?trailing_comments ?leading_detached_comments () -> 
           let path = match path with Some v -> v | None -> [] in
           let span = match span with Some v -> v | None -> [] in
@@ -920,7 +920,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.SourceCodeInfo"
       type t = SourceCodeInfo.Location.t list
-      let make =
+      let create =
         fun ?location () -> 
         let location = match location with Some v -> v | None -> [] in
         location
@@ -942,26 +942,26 @@ module Google = struct
       module rec Annotation : sig
         val name': unit -> string
         type t = { path: int list; source_file: string option; begin': int option; end': int option } 
-        val make : ?path:int list -> ?source_file:string -> ?begin':int -> ?end':int -> unit -> t
+        val create : ?path:int list -> ?source_file:string -> ?begin':int -> ?end':int -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end
       val name': unit -> string
       type t = GeneratedCodeInfo.Annotation.t list 
-      val make : ?annotation:GeneratedCodeInfo.Annotation.t list -> unit -> t
+      val create : ?annotation:GeneratedCodeInfo.Annotation.t list -> unit -> t
       val to_proto: t -> Runtime'.Writer.t
       val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
     end = struct 
       module rec Annotation : sig
         val name': unit -> string
         type t = { path: int list; source_file: string option; begin': int option; end': int option } 
-        val make : ?path:int list -> ?source_file:string -> ?begin':int -> ?end':int -> unit -> t
+        val create : ?path:int list -> ?source_file:string -> ?begin':int -> ?end':int -> unit -> t
         val to_proto: t -> Runtime'.Writer.t
         val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) result
       end = struct 
         let name' () = "descriptor.google.protobuf.GeneratedCodeInfo.Annotation"
         type t = { path: int list; source_file: string option; begin': int option; end': int option }
-        let make =
+        let create =
           fun ?path ?source_file ?begin' ?end' () -> 
           let path = match path with Some v -> v | None -> [] in
           { path; source_file; begin'; end' }
@@ -981,7 +981,7 @@ module Google = struct
       end
       let name' () = "descriptor.google.protobuf.GeneratedCodeInfo"
       type t = GeneratedCodeInfo.Annotation.t list
-      let make =
+      let create =
         fun ?annotation () -> 
         let annotation = match annotation with Some v -> v | None -> [] in
         annotation

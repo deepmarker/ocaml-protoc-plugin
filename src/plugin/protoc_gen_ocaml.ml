@@ -73,10 +73,10 @@ let main () =
   let outputs = parse_request request in
   (* Apparently this can be done several times? *)
   let response_of_output (filename, code) =
-    File.make ~name:filename ~content:(Code.contents code) ()
+    File.create ~name:filename ~content:(Code.contents code) ()
   in
   let files = List.map ~f:response_of_output outputs in
-  let response = make ~supported_features:1 ~file:files () in
+  let response = create ~supported_features:1 ~file:files () in
   write response
 
 let main () =

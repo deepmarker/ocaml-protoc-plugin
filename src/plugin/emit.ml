@@ -121,7 +121,7 @@ let emit_extension ~scope ~params (field : FieldDescriptorProto.t) =
   (* Create the type of the type' / type_name *)
   let t =
     let params = Parameters.{params with singleton_record = false} in
-    Types.make ~params ~syntax:`Proto2 ~is_cyclic:false ~scope ~is_map_entry:false ~has_extensions:false ~fields:[field] []
+    Types.create ~params ~syntax:`Proto2 ~is_cyclic:false ~scope ~is_map_entry:false ~has_extensions:false ~fields:[field] []
   in
 
   let signature = Code.init () in
@@ -230,7 +230,7 @@ let rec emit_message ~params ~syntax scope
        |> Printf.sprintf "[%s]"
      in
      let Types.{ type'; constructor; apply; deserialize_spec; serialize_spec; default_constructor_sig; default_constructor_impl } =
-       Types.make ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields oneof_decls
+       Types.create ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fields oneof_decls
      in
      ignore (default_constructor_sig, default_constructor_impl);
      let open Code in
@@ -238,14 +238,14 @@ let rec emit_message ~params ~syntax scope
      (* Emit signature *)
      emit signature `None "val name': unit -> string";
      emit signature `None "type t = %s %s" type' params.annot;
-     emit signature `None "val make : %s" default_constructor_sig;
+     emit signature `None "val create : %s" default_constructor_sig;
      emit signature `None "val to_proto: t -> Runtime'.Writer.t";
      emit signature `None "val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) Stdlib.Result.t";
 
      (* Emit implementation *)
      emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
      emit implementation `None "type t = %s %s" type' params.annot;
-     emit implementation `Begin "let make =";
+     emit implementation `Begin "let create =";
      emit implementation `None "%s" default_constructor_impl;
      emit implementation `End "";
 

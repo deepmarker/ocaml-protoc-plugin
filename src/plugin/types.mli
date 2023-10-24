@@ -12,7 +12,7 @@ type t = {
 
 type syntax = [`Proto2 | `Proto3]
 
-val make:
+val create:
   params:Parameters.t ->
   syntax:[< syntax ] ->
   is_cyclic: bool ->
