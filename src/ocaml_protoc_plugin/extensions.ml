@@ -1,8 +1,10 @@
-open Sexplib.Std
+module ProtoField = Field
+module ProtoResult = Result
+open Core
+module Field = ProtoField
 open Ppx_yojson_conv_lib.Yojson_conv
-open StdLabels
 
-type t = (int * Field.t) list [@@deriving sexp, yojson]
+type t = (int * Field.t) list [@@deriving bin_io, compare, hash, sexp, yojson]
 let default = []
 let pp_item fmt (index, field) = Format.fprintf fmt "(%d, %a)" index Field.pp field
 let pp : Format.formatter -> t -> unit = fun fmt -> Format.pp_print_list pp_item fmt
@@ -10,7 +12,7 @@ let show : t -> string = Format.asprintf "%a" pp
 let equal _ _ = true
 let compare _ _ = 0
 
-let get: ('b -> 'b, 'b) Deserialize.S.compound_list -> t -> 'b Result.t = fun spec t ->
+let get: ('b -> 'b, 'b) Deserialize.S.compound_list -> t -> 'b ProtoResult.t = fun spec t ->
   let writer = Writer.of_list t in
   (* Back and forth - its the same, no? *)
   let reader = Writer.contents writer |> Reader.create in
@@ -19,7 +21,7 @@ let get: ('b -> 'b, 'b) Deserialize.S.compound_list -> t -> 'b Result.t = fun sp
 let set: ('a -> Writer.t, Writer.t) Serialize.S.compound_list -> t -> 'a -> t = fun spec t v ->
   let writer = Serialize.serialize [] spec [] v in
   let reader = Writer.contents writer |> Reader.create in
-  match Reader.to_list reader |> Result.get ~msg:"Internal serialization fail" with
+  match Reader.to_list reader |> ProtoResult.get ~msg:"Internal serialization fail" with
   | (((index, _) :: _) as fields) ->
-    (List.filter ~f:(fun (i, _) -> i != index) t) @  fields
+    (List.filter ~f:(fun (i, _) -> i <> index) t) @  fields
   | [] -> t

@@ -1,4 +1,4 @@
-type t = (int * Field.t) list [@@deriving sexp, yojson]
+type t = (int * Field.t) list [@@deriving bin_io, compare, hash, sexp, yojson]
 val default : t
 val pp : Format.formatter -> t -> unit
 val show : t -> string

@@ -1,4 +1,4 @@
-open Base
+open Core
 open Ppx_yojson_conv_lib.Yojson_conv
 
 type t =
@@ -10,7 +10,7 @@ type t =
       data : string;
     } (* string, bytes, embedded messages, packed repeated fields *)
   | Fixed_32_bit of int32 (* fixed32, sfixed32, float *)
-[@@deriving sexp, yojson]
+[@@deriving bin_io, hash, compare, sexp, yojson]
 
 let pp ppf t = Sexp.pp ppf (sexp_of_t t)
 let show t = Stdlib.Format.asprintf "%a" pp t

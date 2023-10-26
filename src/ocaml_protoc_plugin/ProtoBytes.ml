@@ -1,4 +1,4 @@
-open Sexplib
+open Core
 
 include String
 
