@@ -21,12 +21,10 @@
    GoogleProtobufAny.ml
    GoogleProtobufApi.ml
    GoogleProtobufDescriptor.ml
-   GoogleProtobufDuration.ml
    GoogleProtobufEmpty.ml
    GoogleProtobufField_mask.ml
    GoogleProtobufSource_context.ml
    GoogleProtobufStruct.ml
-   GoogleProtobufTimestamp.ml
    GoogleProtobufType.ml
    GoogleProtobufWrappers.ml)
  (deps
@@ -38,12 +36,10 @@
        %{read-lines:google_include}/google/protobuf/any.proto
        %{read-lines:google_include}/google/protobuf/api.proto
        %{read-lines:google_include}/google/protobuf/descriptor.proto
-       %{read-lines:google_include}/google/protobuf/duration.proto
        %{read-lines:google_include}/google/protobuf/empty.proto
        %{read-lines:google_include}/google/protobuf/field_mask.proto
        %{read-lines:google_include}/google/protobuf/source_context.proto
        %{read-lines:google_include}/google/protobuf/struct.proto
-       %{read-lines:google_include}/google/protobuf/timestamp.proto
        %{read-lines:google_include}/google/protobuf/type.proto
        %{read-lines:google_include}/google/protobuf/wrappers.proto
 )))

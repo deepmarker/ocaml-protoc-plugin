@@ -1,32 +1,8 @@
 open Core
-module Time_ns = Time_ns_unix
 module Any = GoogleProtobufAny.Any
 module Api = GoogleProtobufApi
 module Descriptor = GoogleProtobufDescriptor
-
-module Duration = struct
-  include GoogleProtobufDuration.Duration
-
-  let to_span x =
-    Time_ns.Span.of_int_ns ((x.seconds * 1_000_000_000) + x.nanos)
-  ;;
-
-  let of_span x =
-    let ns = Time_ns.Span.to_int_ns x in
-    let seconds = ns / 1_000_000_000 in
-    let nanos = ns mod 1_000_000_000 in
-    create ~seconds ~nanos ()
-  ;;
-
-  let yojson_of_t t =
-    Stdlib.Format.ksprintf (fun s -> `String s) "%fs" (Time_ns.Span.to_sec (to_span t))
-
-  let t_of_yojson json =
-    let str = Yojson.Safe.Util.to_string json in
-    let secs = Float.of_string (String.sub str ~pos:0 ~len:(String.length str -1)) in
-    Time_ns.Span.of_sec secs |> of_span
-end
-
+module Duration = GoogleProtobufDuration.Duration
 module Empty = GoogleProtobufEmpty.Empty
 module Field_mask = GoogleProtobufField_mask.FieldMask
 module Source_context = GoogleProtobufSource_context.SourceContext
@@ -70,26 +46,6 @@ module Struct = struct
   end
 end
 
-module Timestamp = struct
-  include GoogleProtobufTimestamp.Timestamp
-
-  let to_time_ns x =
-    Time_ns.of_int_ns_since_epoch ((x.seconds * 1_000_000_000) + x.nanos)
-  ;;
-
-  let of_time_ns x =
-    let ns = Time_ns.to_int_ns_since_epoch x in
-    let seconds = ns / 1_000_000_000 in
-    let nanos = ns mod 1_000_000_000 in
-    create ~seconds ~nanos ()
-  ;;
-
-  let yojson_of_t t =
-    `String (to_time_ns t |> Time_ns.to_string_iso8601_basic ~zone:Time_ns.Zone.utc)
-
-  let t_of_yojson json =
-    Yojson.Safe.Util.to_string json |> Time_ns.of_string |> of_time_ns
-end
-
+module Timestamp = GoogleProtobufTimestamp.Timestamp
 module Type = GoogleProtobufType
 module Wrappers = GoogleProtobufWrappers
