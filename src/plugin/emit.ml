@@ -30,26 +30,55 @@ let emit_enum_type ~scope ~params
   append implementation t;
   emit signature `None "val to_int: t -> int";
   emit signature `None "val from_int: int -> (t, [> Runtime'.Result.error]) Stdlib.Result.t";
+  emit signature `None "val yojson_of_t : t -> Yojson.Safe.t";
+  emit signature `None "val t_of_yojson: Yojson.Safe.t -> t";
 
+  (* Emit to_int function *)
   emit implementation `Begin "let to_int = function";
   List.iter ~f:(fun EnumValueDescriptorProto.{name; number; _} ->
     emit implementation `None "| %s -> %d" (Scope.get_name_exn scope name) (Option.get number)
   ) values;
   emit implementation `End "";
 
+  (* Emit from_int function *)
   emit implementation `Begin "let from_int = function";
   let _ =
-    List.fold_left ~init:IntSet.empty ~f:(fun seen EnumValueDescriptorProto.{name; number; _} ->
-        let idx = (Option.get number) in
+    List.fold_left values ~init:IntSet.empty ~f:(fun seen EnumValueDescriptorProto.{name; number; _} ->
+        let idx = Option.get number in
         match IntSet.mem idx seen with
         | true -> seen
         | false ->
           emit implementation `None "| %d -> Ok %s" idx (Scope.get_name_exn scope name);
           IntSet.add idx seen
-      ) values
+      )
   in
   emit implementation `None "| n -> Error (`Unknown_enum_value n)";
   emit implementation `End "";
+
+  (* Emit yojson_of_t function *)
+  emit implementation `Begin "let yojson_of_t = function";
+  List.iter ~f:(fun EnumValueDescriptorProto.{name; _} ->
+    let nm = Scope.get_name_exn scope name in
+    emit implementation `None {|| %s -> `String "%s"|} nm nm
+  ) values;
+  emit implementation `End "";
+
+  (* Emit t_of_yojson function *)
+  emit implementation `Begin "let t_of_yojson = function";
+  let _ =
+    List.fold_left values ~init:IntSet.empty ~f:(fun seen EnumValueDescriptorProto.{name; number; _} ->
+        let idx = Option.get number in
+        match IntSet.mem idx seen with
+        | true -> seen
+        | false ->
+          let nm = Scope.get_name_exn scope name in
+          emit implementation `None {|| `String "%s" -> %s|} nm nm;
+          IntSet.add idx seen
+      )
+  in
+  emit implementation `None {|| #Yojson.Safe.t -> invalid_arg "unsupported enum value"|};
+  emit implementation `End "";
+
   {module_name; signature; implementation}
 
 let emit_method t local_scope scope service_name MethodDescriptorProto.{ name; input_type; output_type; _} =
