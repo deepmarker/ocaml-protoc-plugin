@@ -36,7 +36,7 @@ val get_name : t -> string -> string
 val get_name_exn : t -> string option -> string
 
 
-(** Get the type of the current scope *)
+(** Get the type of the protobuf message *)
 val get_current_scope : t -> string
 
 (** Get the package name. This function assumes callee is in service scope *)

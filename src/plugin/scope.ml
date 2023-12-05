@@ -137,12 +137,7 @@ let get_name t name =
 
 let get_name_exn t name = get_name t (Option.get name)
 
-(* Dunno what this is for!! *)
-let get_current_scope t =
-  let file_name = Type.file_name t.type_db t.path in
-  let __ =(String.lowercase_ascii file_name) :: List.rev t.path in
-  (* TODO: FIX!! *)
-  ""
+let get_current_scope t = String.concat ~sep:"." (List.rev t.path)
 
 let get_package_name { path; package_length; _ } =
   let len = List.length path in
