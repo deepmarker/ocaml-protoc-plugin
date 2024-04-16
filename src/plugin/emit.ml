@@ -269,7 +269,7 @@ let rec emit_message ~params ~syntax scope
      emit signature `None "type t = %s %s" type' params.annot;
      emit signature `None "val create : %s" default_constructor_sig;
      emit signature `None "val to_proto: t -> Runtime'.Writer.t";
-     emit signature `None "val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) Stdlib.Result.t";
+     emit signature `None "val from_proto: Runtime'.Reader.t -> (t, Runtime'.Result.error) result";
 
      (* Emit implementation *)
      emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
@@ -289,7 +289,7 @@ let rec emit_message ~params ~syntax scope
      emit implementation `None "let constructor = %s in" constructor;
      emit implementation `None "let spec = %s in" deserialize_spec;
      emit implementation `None "let deserialize = Runtime'.Deserialize.deserialize %s spec constructor in" extension_ranges;
-     emit implementation `None "fun writer -> deserialize writer |> Runtime'.Result.open_error";
+     emit implementation `None "fun writer -> deserialize writer";
      emit implementation `End "" ) ;
   {module_name; signature; implementation}
 
