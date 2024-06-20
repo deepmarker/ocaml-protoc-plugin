@@ -22,7 +22,7 @@ open Core [@@warning "-33"]
 open Ppx_yojson_conv_lib.Yojson_conv [@@warning "-33"]
 module rec Timestamp : sig
   val name': unit -> string
-  type t = { seconds: int; nanos: int } [@@deriving compare, equal, hash, sexp, yojson]
+  type t = { seconds: int; nanos: int } [@@deriving compare, equal, hash, sexp, yojson, bin_io]
   val create : ?seconds:int -> ?nanos:int -> unit -> t
   val to_proto: t -> Runtime'.Writer.t
   val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) Stdlib.Result.t
@@ -30,7 +30,7 @@ module rec Timestamp : sig
   val of_time_ns : Time_ns.t -> t
 end = struct 
   let name' () = ""
-  type t = { seconds: int; nanos: int } [@@deriving compare, equal, hash, sexp, yojson]
+  type t = { seconds: int; nanos: int } [@@deriving compare, equal, hash, sexp, yojson, bin_io]
   let create =
     fun ?seconds ?nanos () -> 
     let seconds = match seconds with Some v -> v | None -> 0 in
