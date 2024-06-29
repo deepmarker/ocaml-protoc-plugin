@@ -8,7 +8,7 @@ module Runtime = Runtime
 module Reader = Reader
 module Writer = Writer
 module Service = Service
-module Result = Result
+module PResult = Result
 module Extensions = Extensions
 
 (**/**)

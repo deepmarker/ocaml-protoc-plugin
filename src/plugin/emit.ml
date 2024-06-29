@@ -29,7 +29,7 @@ let emit_enum_type ~scope ~params
   append signature t;
   append implementation t;
   emit signature `None "val to_int: t -> int";
-  emit signature `None "val from_int: int -> (t, [> Runtime'.Result.error]) Stdlib.Result.t";
+  emit signature `None "val from_int: int -> (t, [> PResult.error]) Result.t";
   emit signature `None "val yojson_of_t : t -> Yojson.Safe.t";
   emit signature `None "val t_of_yojson: Yojson.Safe.t -> t";
 
@@ -113,10 +113,10 @@ let emit_method t local_scope scope service_name MethodDescriptorProto.{ name; i
   emit t `None "module Response = %s" output;
   emit t `End "end";
   emit t `Begin "let %s = " uncapitalized_name;
-  emit t `None "(module %s : Runtime'.Service.Message with type t = %s ), "
+  emit t `None "(module %s : Service.Message with type t = %s ), "
     input
     input_t;
-  emit t `None "(module %s : Runtime'.Service.Message with type t = %s )"
+  emit t `None "(module %s : Service.Message with type t = %s )"
     output
     output_t;
   emit t `End "";
@@ -159,13 +159,13 @@ let emit_extension ~scope ~params (field : FieldDescriptorProto.t) =
   append implementation signature;
 
   emit signature `None "type t = %s %s" t.type' params.annot;
-  emit signature `None "val get: %s -> (%s, [> Runtime'.Result.error]) Stdlib.Result.t" extendee_type t.type';
+  emit signature `None "val get: %s -> (%s, [> PResult.error]) Result.t" extendee_type t.type';
   emit signature `None "val set: %s -> %s -> %s" extendee_type t.type' extendee_type;
 
   emit implementation `None "type t = %s %s" t.type' params.annot;
-  emit implementation `None "let get extendee = Runtime'.Extensions.get %s (extendee.%s) |> Runtime'.Result.open_error" t.deserialize_spec extendee_field ;
+  emit implementation `None "let get extendee = Extensions.get %s (extendee.%s) |> PResult.open_error" t.deserialize_spec extendee_field ;
   emit implementation `Begin "let set extendee t =";
-  emit implementation `None "let extensions' = Runtime'.Extensions.set (%s) (extendee.%s) t in" t.serialize_spec extendee_field;
+  emit implementation `None "let extensions' = Extensions.set (%s) (extendee.%s) t in" t.serialize_spec extendee_field;
   emit implementation `None "{ extendee with %s = extensions' }" extendee_field;
   emit implementation `End "";
   { module_name; signature; implementation }
@@ -268,8 +268,8 @@ let rec emit_message ~params ~syntax scope
      emit signature `None "val name': unit -> string";
      emit signature `None "type t = %s %s" type' params.annot;
      emit signature `None "val create : %s" default_constructor_sig;
-     emit signature `None "val to_proto: t -> Runtime'.Writer.t";
-     emit signature `None "val from_proto: Runtime'.Reader.t -> (t, Runtime'.Result.error) result";
+     emit signature `None "val to_proto: t -> Writer.t";
+     emit signature `None "val from_proto: Reader.t -> (t, PResult.error) result";
 
      (* Emit implementation *)
      emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
@@ -281,14 +281,14 @@ let rec emit_message ~params ~syntax scope
      emit implementation `Begin "let to_proto =";
      emit implementation `None "let apply = %s in" apply;
      emit implementation `None "let spec = %s in" serialize_spec;
-     emit implementation `None "let serialize = Runtime'.Serialize.serialize %s (spec) in" extension_ranges;
+     emit implementation `None "let serialize = Serialize.serialize %s (spec) in" extension_ranges;
      emit implementation `None "fun t -> apply ~f:serialize t";
      emit implementation `End "";
 
      emit implementation `Begin "let from_proto =";
      emit implementation `None "let constructor = %s in" constructor;
      emit implementation `None "let spec = %s in" deserialize_spec;
-     emit implementation `None "let deserialize = Runtime'.Deserialize.deserialize %s spec constructor in" extension_ranges;
+     emit implementation `None "let deserialize = Deserialize.deserialize %s spec constructor in" extension_ranges;
      emit implementation `None "fun writer -> deserialize writer";
      emit implementation `End "" ) ;
   {module_name; signature; implementation}

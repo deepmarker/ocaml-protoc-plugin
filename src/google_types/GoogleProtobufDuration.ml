@@ -24,8 +24,8 @@ module rec Duration : sig
   val name': unit -> string
   type t = { seconds: int; nanos: int } [@@deriving compare, equal, hash, sexp, yojson, bin_io]
   val create : ?seconds:int -> ?nanos:int -> unit -> t
-  val to_proto: t -> Runtime'.Writer.t
-  val from_proto: Runtime'.Reader.t -> (t, [> Runtime'.Result.error]) Stdlib.Result.t
+  val to_proto: t -> Writer.t
+  val from_proto: Reader.t -> (t, [> PResult.error]) Result.t
   val to_span : t -> Time_ns.Span.t
   val of_span : Time_ns.Span.t -> t
 end = struct 
@@ -39,15 +39,15 @@ end = struct
   
   let to_proto =
     let apply = fun ~f:f' { seconds; nanos } -> f' [] seconds nanos in
-    let spec = Runtime'.Serialize.C.( basic (1, int64_int, proto3) ^:: basic (2, int32_int, proto3) ^:: nil ) in
-    let serialize = Runtime'.Serialize.serialize [] (spec) in
+    let spec = Serialize.C.( basic (1, int64_int, proto3) ^:: basic (2, int32_int, proto3) ^:: nil ) in
+    let serialize = Serialize.serialize [] (spec) in
     fun t -> apply ~f:serialize t
   
   let from_proto =
     let constructor = fun _extensions seconds nanos -> { seconds; nanos } in
-    let spec = Runtime'.Deserialize.C.( basic (1, int64_int, proto3) ^:: basic (2, int32_int, proto3) ^:: nil ) in
-    let deserialize = Runtime'.Deserialize.deserialize [] spec constructor in
-    fun writer -> deserialize writer |> Runtime'.Result.open_error
+    let spec = Deserialize.C.( basic (1, int64_int, proto3) ^:: basic (2, int32_int, proto3) ^:: nil ) in
+    let deserialize = Deserialize.deserialize [] spec constructor in
+    fun writer -> deserialize writer |> PResult.open_error
 
     let to_span x =
     Time_ns.Span.of_int_ns ((x.seconds * 1_000_000_000) + x.nanos)

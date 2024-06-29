@@ -147,7 +147,7 @@ let default_of_spec: type a. a spec -> string = fun spec -> match spec with
   | Bool -> string_of_default spec false
   | String -> string_of_default spec ""
   | Bytes -> string_of_default spec ""
-  | Enum (_ , s, _,  _) -> sprintf {|(%s 0 |> Runtime'.Result.get ~msg:"Code gen error")|} s
+  | Enum (_ , s, _,  _) -> sprintf {|(%s 0 |> PResult.get ~msg:"Code gen error")|} s
   | Message _ -> failwith "Messages defaults are not relevant"
 
 let string_of_spec: type a. [`Deserialize | `Serialize] -> a spec -> string = fun dir spec ->
@@ -194,7 +194,7 @@ let type_of_spec: type a. a spec -> string = function
   | UInt64 | Int64 | SInt64 | Fixed64 | SFixed64 -> "int64"
   | Bool -> "bool"
   | String -> "string"
-  | Bytes -> "Runtime'.ProtoBytes.t"
+  | Bytes -> "ProtoBytes.t"
   | Enum (type', _, _, _) -> type'
   | Message (type', _, _, _) -> type'
 
@@ -610,7 +610,7 @@ let create ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fiel
   (* Where types are printed. *)
   let type' =
     List.rev_map ~f:(fun { name; type'; _} -> ((Scope.get_name scope name), (typestr_of_type type'))) ts
-    |> prepend ~cond:has_extensions ("extensions'", "Runtime'.Extensions.t")
+    |> prepend ~cond:has_extensions ("extensions'", "Extensions.t")
     |> List.rev_map ~f:(function
       | (_, type') when t_as_tuple -> type'
       | (name, type') -> sprintf "%s: %s" name type'
@@ -636,7 +636,7 @@ let create ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fiel
 
   let default_constructor_sig =
     List.rev_map ~f:constructor_sig_arg ts
-    |> prepend ~cond:has_extensions "?extensions':Runtime'.Extensions.t"
+    |> prepend ~cond:has_extensions "?extensions':Extensions.t"
     |> prepend "unit"
     |> prepend "t"
     |> List.rev
@@ -645,7 +645,7 @@ let create ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fiel
   let default_constructor_impl =
     let args =
       List.map ~f:constructor_arg ts
-      |> append ~cond:has_extensions "?(extensions' = Runtime'.Extensions.default)"
+      |> append ~cond:has_extensions "?(extensions' = Extensions.default)"
       |> String.concat ~sep: " "
     in
     let mappings =
@@ -666,13 +666,13 @@ let create ~params ~syntax ~is_cyclic ~is_map_entry ~has_extensions ~scope ~fiel
   let deserialize_spec =
     let spec = List.map ~f:(fun (c : c) -> c.deserialize_spec) ts in
     String.concat ~sep:" ^:: " (spec @ ["nil"])
-    |> sprintf "Runtime'.Deserialize.C.( %s )"
+    |> sprintf "Deserialize.C.( %s )"
   in
 
   let serialize_spec =
     let spec = List.map ~f:(fun (c : c) -> c.serialize_spec) ts in
     String.concat ~sep:" ^:: " (spec @ ["nil"])
-    |> sprintf "Runtime'.Serialize.C.( %s )"
+    |> sprintf "Serialize.C.( %s )"
   in
 
   (* The type contains optional elements. We should not have those *)
