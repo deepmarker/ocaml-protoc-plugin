@@ -1,5 +1,8 @@
 type t
 
+(** size of a writer *)
+val size : t -> int
+
 (** Create a new writer *)
 val init : unit -> t
 
