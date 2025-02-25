@@ -14,7 +14,7 @@ let read () =
 (* Write to stdout *)
 let write response =
   Plugin.CodeGeneratorResponse.to_proto response
-  |> Ocaml_protoc_plugin.Writer.contents
+  |> Ocaml_protoc_plugin.Writer.To_bytes.contents
   |> output_string stdout
 
 (* takes raw args from FileDescriptorProto.t *)

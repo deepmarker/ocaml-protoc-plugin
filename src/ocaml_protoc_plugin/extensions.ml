@@ -15,12 +15,12 @@ let compare _ _ = 0
 let get: ('b -> 'b, 'b) Deserialize.S.compound_list -> t -> 'b ProtoResult.t = fun spec t ->
   let writer = Writer.of_list t in
   (* Back and forth - its the same, no? *)
-  let reader = Writer.contents writer |> Reader.create in
+  let reader = Writer.To_bytes.contents writer |> Reader.create in
   Deserialize.deserialize [] spec (fun _ a -> a) reader
 
 let set: ('a -> Writer.t, Writer.t) Serialize.S.compound_list -> t -> 'a -> t = fun spec t v ->
   let writer = Serialize.serialize [] spec [] v in
-  let reader = Writer.contents writer |> Reader.create in
+  let reader = Writer.To_bytes.contents writer |> Reader.create in
   match Reader.to_list reader |> ProtoResult.get ~msg:"Internal serialization fail" with
   | (((index, _) :: _) as fields) ->
     (List.filter ~f:(fun (i, _) -> i <> index) t) @  fields

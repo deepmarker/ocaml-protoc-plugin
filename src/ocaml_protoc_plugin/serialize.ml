@@ -10,7 +10,7 @@ let serialize_message : (int * Field.t) list -> string =
  fun fields ->
   let writer = Writer.init () in
   List.iter ~f:(fun (index, field) -> Writer.write_field writer index field) fields;
-  Writer.contents writer
+  Writer.To_bytes.contents writer
 
 let unsigned_varint v = Field.Varint v
 
@@ -57,7 +57,7 @@ let rec field_of_spec: type a. a spec -> a -> Field.t = function
   | Message to_proto ->
     fun v ->
       let writer = to_proto v in
-      Field.length_delimited (Writer.contents writer)
+      Field.length_delimited (Writer.To_bytes.contents writer)
 
 
 let is_scalar: type a. a spec -> bool = function
