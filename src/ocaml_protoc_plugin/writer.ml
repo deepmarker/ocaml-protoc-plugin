@@ -85,29 +85,54 @@ module To_bytes = struct
     Bytes.unsafe_to_string buffer
 end
 
-module To_buffer = struct
-  let add_varint buffer v =
-    let rec inner  v =
-      let open Infix.Int64 in
-      match v land 0x7FL, v lsr 7 with
-      | v, 0L -> Buffer.add_char buffer (v |> Int64.to_int |> Char.chr)
-      | v, rem ->
-        Buffer.add_char buffer (v lor 0x80L |> Int64.to_int |> Char.chr);
-        inner rem
-    in
-    inner v
+let add_varint f buf v =
+  let rec inner v =
+    let open Infix.Int64 in
+    match v land 0x7FL, v lsr 7 with
+    | v, 0L -> f buf (v |> Int64.to_int |> Char.chr)
+    | v, rem ->
+      f buf (v lor 0x80L |> Int64.to_int |> Char.chr);
+      inner rem
+  in
+  inner v
 
+module To_buffer = struct
   let add_fixed32 = Buffer.add_int32_le
   let add_fixed64 = Buffer.add_int64_le
 
   let add_length_delimited buffer ~src ~src_pos ~len =
-    add_varint buffer (Int64.of_int len);
+    add_varint Buffer.add_char buffer (Int64.of_int len);
     Buffer.add_substring buffer src src_pos len
 
   let add_field buffer = function
-    | Varint v -> add_varint buffer v
+    | Varint v -> add_varint Buffer.add_char buffer v
     | Fixed_32_bit v -> add_fixed32 buffer v
     | Fixed_64_bit v -> add_fixed64 buffer v
+    | Length_delimited {offset = src_pos; length; data} ->
+      add_length_delimited buffer ~src:data ~src_pos ~len:length
+
+  let add buf t =
+    let fields = rev_fields t.fields in
+    List.iter fields ~f:(fun field -> add_field buf field)
+end
+
+module To_bigbuffer = struct
+  open Core
+
+  let add_length_delimited buffer ~src ~src_pos ~len =
+    add_varint Bigbuffer.add_char buffer (Int64.of_int len);
+    Bigbuffer.add_substring buffer src ~pos:src_pos ~len
+
+  let buf = Bytes.create 8
+
+  let add_field buffer = function
+    | Varint v -> add_varint Bigbuffer.add_char buffer v
+    | Fixed_32_bit v ->
+      Stdlib.Bytes.set_int32_le buf 0 v;
+      Bigbuffer.add_subbytes buffer buf ~pos:0 ~len:4
+    | Fixed_64_bit v ->
+      Stdlib.Bytes.set_int64_le buf 0 v;
+      Bigbuffer.add_bytes buffer buf;
     | Length_delimited {offset = src_pos; length; data} ->
       add_length_delimited buffer ~src:data ~src_pos ~len:length
 

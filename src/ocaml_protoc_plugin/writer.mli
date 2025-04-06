@@ -23,6 +23,10 @@ module To_buffer : sig
   val add : Buffer.t -> t -> unit
 end
 
+module To_bigbuffer : sig
+  val add : Core.Bigbuffer.t -> t -> unit
+end
+
 (**/**)
 val write_field : t -> int -> Field.t -> unit
 val add_field : t -> Field.t -> unit
