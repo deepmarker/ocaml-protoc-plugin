@@ -269,7 +269,7 @@ let rec emit_message ~params ~syntax scope
      emit signature `None "type t = %s %s" type' params.annot;
      emit signature `None "val create : %s" default_constructor_sig;
      emit signature `None "val to_proto: t -> Writer.t";
-     emit signature `None "val from_proto: Reader.t -> (t, PResult.error) result";
+     emit signature `None "val from_proto: Reader.t -> (t, PResult.error) Result.t";
 
      (* Emit implementation *)
      emit implementation `None "let name' () = \"%s\"" (Scope.get_current_scope scope);
