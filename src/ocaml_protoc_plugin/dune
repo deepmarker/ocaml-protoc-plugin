@@ -2,6 +2,6 @@
  (name ocaml_protoc_plugin)
  (public_name ocaml-protoc-plugin)
  (preprocess (pps ppx_jane ppx_yojson_conv))
- (libraries core yojson base64)
+ (libraries core core_kernel.iobuf yojson base64)
  (synopsis "Serialization and deserialization of protobuf types")
 )

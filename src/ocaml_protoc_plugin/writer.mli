@@ -27,6 +27,10 @@ module To_bigbuffer : sig
   val add : Core.Bigbuffer.t -> t -> unit
 end
 
+module To_iobuf : sig
+  val fill : (Core.read_write, Iobuf.seek) Iobuf.t -> t -> unit
+end
+
 (**/**)
 val write_field : t -> int -> Field.t -> unit
 val add_field : t -> Field.t -> unit

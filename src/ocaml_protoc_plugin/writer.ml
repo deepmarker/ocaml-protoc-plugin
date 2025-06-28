@@ -141,6 +141,26 @@ module To_bigbuffer = struct
     List.iter fields ~f:(fun field -> add_field buf field)
 end
 
+module To_iobuf = struct
+  open Core
+
+  let add_length_delimited buffer ~src ~src_pos ~len =
+    add_varint Iobuf.Fill.char buffer (Int64.of_int len);
+    Iobuf.Fill.string ~str_pos:src_pos ~len buffer src
+
+
+  let add_field buffer = function
+    | Varint v -> add_varint Iobuf.Fill.char buffer v
+    | Fixed_32_bit v -> Iobuf.Fill.int32_le_trunc buffer (Int32.to_int_exn v)
+    | Fixed_64_bit v -> Iobuf.Fill.int64_t_le buffer v
+    | Length_delimited {offset = src_pos; length; data} ->
+      add_length_delimited buffer ~src:data ~src_pos ~len:length
+
+  let fill buf t =
+    let fields = rev_fields t.fields in
+    List.iter fields ~f:(add_field buf)
+end
+
 let add_field t field =
   t.fields <- Cons_field(field, t.fields);
   t.size <- t.size + size_of_field field
