@@ -64,7 +64,7 @@ module To_bytes = struct
 
   let write_length_delimited buffer ~offset ~src ~src_pos ~len =
     let offset = write_varint buffer ~offset (Int64.of_int len) in
-    Bytes.blit ~src:(Bytes.of_string src) ~src_pos ~dst:buffer ~dst_pos:offset ~len;
+    Bytes.blit_string ~src ~src_pos ~dst:buffer ~dst_pos:offset ~len;
     offset + len
 
   let write_field buffer ~offset = function
